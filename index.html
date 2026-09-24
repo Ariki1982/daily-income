@@ -1,0 +1,1328 @@
+<!doctype html>
+<html lang="ar" dir="rtl" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>دخل اليوم · Daily Income</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#F6F3EA;
+    --paper:#FFFFFF;
+    --paper-2:#FBF9F3;
+    --ink:#1C2B2A;
+    --ink-dim:#5B6B69;
+    --line:#E4DFD0;
+    --line-strong:#CFC8B4;
+    --teal:#0E6E6E;
+    --teal-dim:#0E6E6E22;
+    --gold:#B8862B;
+    --gold-dim:#B8862B1c;
+    --cash:#3D7A5C;
+    --card:#3862A6;
+    --transfer:#8148A8;
+    --insurance:#B8862B;
+    --other:#6B6357;
+    --danger:#B14545;
+    --radius:10px;
+    --shadow:0 1px 2px rgba(28,43,42,.06), 0 6px 18px rgba(28,43,42,.05);
+    --font-ui:'Cairo',system-ui,sans-serif;
+    --font-num:'JetBrains Mono',ui-monospace,monospace;
+    box-sizing:border-box;
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  *{box-sizing:border-box;}
+  :root[data-theme="dark"]{
+    --bg:#0D1B1A;
+    --paper:#132726;
+    --paper-2:#0F211F;
+    --ink:#EEEAE0;
+    --ink-dim:#9BAFAC;
+    --line:#23413E;
+    --line-strong:#2E524D;
+    --teal:#3EBBBB;
+    --teal-dim:#3EBBBB22;
+    --gold:#E0B563;
+    --gold-dim:#E0B56322;
+    --cash:#6BC79A;
+    --card:#7FA6E8;
+    --transfer:#C79BEB;
+    --insurance:#E0B563;
+    --other:#B7AE9C;
+    --danger:#E38080;
+    --shadow:0 1px 2px rgba(0,0,0,.25), 0 10px 24px rgba(0,0,0,.35);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0D1B1A; --paper:#132726; --paper-2:#0F211F; --ink:#EEEAE0; --ink-dim:#9BAFAC;
+      --line:#23413E; --line-strong:#2E524D; --teal:#3EBBBB; --teal-dim:#3EBBBB22; --gold:#E0B563; --gold-dim:#E0B56322;
+      --cash:#6BC79A; --card:#7FA6E8; --transfer:#C79BEB; --insurance:#E0B563; --other:#B7AE9C; --danger:#E38080;
+      --shadow:0 1px 2px rgba(0,0,0,.25), 0 10px 24px rgba(0,0,0,.35);
+    }
+  }
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--font-ui);
+    min-height:100%;
+    -webkit-font-smoothing:antialiased;
+    transition:background .25s ease, color .25s ease;
+  }
+  html[dir="ltr"] body{font-family:var(--font-ui);}
+  .wrap{
+    max-width:640px;
+    margin:0 auto;
+    padding:16px 16px calc(var(--totalbar-h, 150px) + 16px + env(safe-area-inset-bottom,0px));
+  }
+
+  /* ---------- Top bar ---------- */
+  .topbar{
+    position:sticky; top:0; z-index:20;
+    padding-top:calc(10px + env(safe-area-inset-top,0px));
+    padding-bottom:10px;
+    background:linear-gradient(var(--bg) 78%, transparent);
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+  }
+  .brand{display:flex; flex-direction:column; line-height:1.15;}
+  .brand .title{font-size:20px; font-weight:800; letter-spacing:.2px;}
+  .brand .sub{font-size:12px; color:var(--ink-dim); font-weight:500;}
+  .iconrow{display:flex; gap:8px;}
+  .iconbtn{
+    width:38px; height:38px; border-radius:var(--radius);
+    border:1px solid var(--line); background:var(--paper);
+    color:var(--ink); display:flex; align-items:center; justify-content:center;
+    cursor:pointer; font-size:15px; font-weight:700; font-family:var(--font-ui);
+    transition:border-color .15s, transform .1s;
+  }
+  .iconbtn:active{transform:scale(.94);}
+  .iconbtn:hover{border-color:var(--line-strong);}
+
+  /* ---------- Clock card ---------- */
+  .clock-card{
+    background:var(--paper); border:1px solid var(--line); border-radius:14px;
+    padding:18px 16px; text-align:center; box-shadow:var(--shadow); margin-bottom:14px;
+  }
+  .clock{
+    font-family:var(--font-num); font-size:40px; font-weight:600; letter-spacing:1px;
+    color:var(--teal); direction:ltr; display:inline-flex; align-items:baseline; gap:6px;
+  }
+  .clock .ampm{font-size:15px; font-weight:600; color:var(--ink-dim);}
+  .dates{margin-top:8px; display:flex; flex-direction:column; gap:2px;}
+  .dates .greg{font-size:13.5px; color:var(--ink); font-weight:600;}
+  .dates .hijri{font-size:13px; color:var(--ink-dim);}
+
+  /* ---------- Shift chips ---------- */
+  .shift-row{display:flex; gap:8px; margin:12px 0 4px;}
+  .chip{
+    flex:1; border:1px solid var(--line); background:var(--paper);
+    border-radius:999px; padding:9px 10px; text-align:center;
+    font-size:13.5px; font-weight:600; color:var(--ink-dim); cursor:pointer;
+    transition:all .15s;
+  }
+  .chip.active{background:var(--teal-dim); border-color:var(--teal); color:var(--teal);}
+
+  /* ---------- Day nav ---------- */
+  .daynav{
+    display:flex; align-items:center; justify-content:space-between;
+    background:var(--paper); border:1px solid var(--line); border-radius:var(--radius);
+    padding:8px 10px; margin:14px 0; box-shadow:var(--shadow);
+  }
+  .daynav button{
+    border:none; background:transparent; color:var(--teal); font-size:18px; font-weight:800;
+    cursor:pointer; width:32px; height:32px; border-radius:8px;
+  }
+  .daynav button:hover{background:var(--teal-dim);}
+  .daynav .daylabel{font-size:14px; font-weight:700; display:flex; flex-direction:column; align-items:center; gap:1px;}
+  .daynav .daylabel small{font-weight:500; color:var(--ink-dim); font-size:11.5px;}
+  .daynav input[type=date]{
+    border:none; background:transparent; color:var(--ink); font-family:var(--font-ui);
+    font-size:12px; opacity:0; position:absolute; width:1px; height:1px;
+  }
+
+  /* ---------- Form card ---------- */
+  .card{
+    background:var(--paper); border:1px solid var(--line); border-radius:14px;
+    padding:16px; box-shadow:var(--shadow); margin-bottom:14px;
+  }
+  .card h2{margin:0 0 12px; font-size:14.5px; font-weight:700; color:var(--ink-dim);}
+  .amount-row{display:flex; align-items:center; gap:8px; border:1px solid var(--line-strong); border-radius:var(--radius); padding:6px 12px; background:var(--paper-2);}
+  .amount-row input{
+    flex:1; border:none; background:transparent; outline:none; color:var(--ink);
+    font-family:var(--font-num); font-size:26px; font-weight:600; text-align:center; direction:ltr;
+    -moz-appearance:textfield;
+  }
+  .amount-row input::-webkit-outer-spin-button, .amount-row input::-webkit-inner-spin-button{-webkit-appearance:none; margin:0;}
+  .amount-row .cur{font-size:14px; color:var(--ink-dim); font-weight:700;}
+  .method-grid{display:grid; grid-template-columns:repeat(5,1fr); gap:6px; margin-top:10px;}
+  .method-btn{
+    border:1px solid var(--line); background:var(--paper); border-radius:10px;
+    padding:9px 4px; font-size:11.5px; font-weight:700; color:var(--ink-dim); cursor:pointer; text-align:center;
+    display:flex; flex-direction:column; align-items:center; gap:4px; transition:all .15s;
+  }
+  .method-btn .dot{width:8px; height:8px; border-radius:50%;}
+  .method-btn.active{border-color:currentColor; background:var(--gold-dim);}
+  .note-input{
+    width:100%; margin-top:10px; border:1px solid var(--line); border-radius:var(--radius);
+    padding:10px 12px; font-family:var(--font-ui); font-size:14px; background:var(--paper-2); color:var(--ink); outline:none;
+  }
+  .note-input:focus, .amount-row:focus-within{border-color:var(--teal);}
+  .add-btn{
+    width:100%; margin-top:12px; border:none; border-radius:var(--radius); padding:13px;
+    background:var(--teal); color:#fff; font-family:var(--font-ui); font-size:15px; font-weight:700; cursor:pointer;
+    transition:filter .15s, transform .1s;
+  }
+  .add-btn:active{transform:scale(.98);}
+  .add-btn:disabled{opacity:.45; cursor:not-allowed;}
+
+  /* ---------- Ledger list ---------- */
+  .ledger-head{display:flex; justify-content:space-between; align-items:baseline; margin:4px 2px 8px;}
+  .ledger-head h2{margin:0; font-size:14.5px; font-weight:700; color:var(--ink-dim);}
+  .ledger-head .count{font-size:12px; color:var(--ink-dim); font-family:var(--font-num);}
+  .entry{
+    display:flex; align-items:center; gap:10px; background:var(--paper);
+    border:1px solid var(--line); border-radius:10px; padding:10px 12px; margin-bottom:8px;
+  }
+  .entry .idx{font-family:var(--font-num); font-size:11.5px; color:var(--ink-dim); width:18px; text-align:center; flex-shrink:0;}
+  .entry .dot{width:9px; height:9px; border-radius:50%; flex-shrink:0;}
+  .entry .info{flex:1; min-width:0;}
+  .entry .info .m{font-size:13px; font-weight:700;}
+  .entry .info .n{font-size:12px; color:var(--ink-dim); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .entry .time{font-family:var(--font-num); font-size:11.5px; color:var(--ink-dim); flex-shrink:0; direction:ltr;}
+  .entry .amt{font-family:var(--font-num); font-size:16px; font-weight:700; direction:ltr; flex-shrink:0;}
+  .entry .del{
+    border:none; background:transparent; color:var(--danger); font-size:16px; cursor:pointer;
+    width:26px; height:26px; border-radius:6px; flex-shrink:0;
+  }
+  .entry .del:hover{background:var(--danger); color:#fff;}
+  .empty{
+    text-align:center; padding:30px 10px; color:var(--ink-dim); font-size:13.5px;
+    border:1px dashed var(--line-strong); border-radius:12px;
+  }
+
+  /* ---------- Sticky total ---------- */
+  .totalbar{
+    position:fixed; bottom:0; left:0; right:0; z-index:30;
+    padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));
+    background:var(--paper); border-top:1px solid var(--line);
+    box-shadow:0 -6px 18px rgba(0,0,0,.08);
+  }
+  .totalbar-inner{max-width:640px; margin:0 auto;}
+  .breakdown{display:flex; gap:6px; overflow-x:auto; padding-bottom:6px; margin-bottom:2px;}
+  .breakdown::-webkit-scrollbar{display:none;}
+  .bd-chip{
+    flex-shrink:0; font-size:11px; font-weight:700; color:var(--ink-dim);
+    background:var(--paper-2); border:1px solid var(--line); border-radius:999px; padding:4px 10px;
+    font-family:var(--font-num); direction:ltr;
+  }
+  .total-row{display:flex; align-items:center; justify-content:space-between;}
+  .total-row .lbl{font-size:13.5px; font-weight:700; color:var(--ink-dim);}
+  .total-row .val{font-family:var(--font-num); font-size:28px; font-weight:800; color:var(--gold); direction:ltr;}
+  .toolbtns{display:flex; gap:6px; margin-top:9px;}
+  .toolbtns button{
+    flex:1; border:1px solid var(--line); background:var(--paper-2); color:var(--ink);
+    border-radius:8px; padding:9px 4px; font-size:11.5px; font-weight:700; font-family:var(--font-ui);
+    cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:3px;
+  }
+  .toolbtns button:hover{border-color:var(--teal); color:var(--teal);}
+  .toolbtns svg{width:15px; height:15px;}
+
+  input[type=file]{display:none;}
+
+  /* ---------- Toast ---------- */
+  .toast{
+    position:fixed; top:calc(14px + env(safe-area-inset-top,0px)); left:50%; transform:translateX(-50%) translateY(-140%);
+    background:var(--ink); color:var(--bg); padding:10px 18px; border-radius:999px; font-size:13px; font-weight:600;
+    z-index:100; transition:transform .25s ease; box-shadow:var(--shadow); white-space:nowrap;
+  }
+  .toast.show{transform:translateX(-50%) translateY(0);}
+
+  /* ---------- Print ---------- */
+  @media print{
+    body{background:#fff; color:#000;}
+    .wrap, .totalbar{display:none !important;}
+    #printView{display:block !important;}
+  }
+  #printView{display:none;}
+  #printView.pv-capturing{
+    display:block; position:fixed; top:0; left:-10000px; z-index:-1;
+    width:760px; background:#fff; color:#111; padding:18px; direction:rtl;
+  }
+  .pv-month{padding:14px 6px; page-break-after:always;}
+  .pv-month:last-child{page-break-after:auto;}
+  .pv-title{font-size:18px; font-weight:800; margin:0 0 2px; color:#111;}
+  .pv-sub{font-size:11.5px; color:#555; margin:0 0 12px;}
+  .pv-table{width:100%; border-collapse:collapse; font-size:11.5px; font-family:var(--font-ui);}
+  .pv-table th, .pv-table td{border:1px solid #999; padding:5px 7px; text-align:start; color:#111;}
+  .pv-table th{background:#eee; font-weight:700;}
+  .pv-table td.num, .pv-table th.num{font-family:var(--font-num); direction:ltr; text-align:end;}
+  .pv-total-row td{font-weight:800; background:#f3f3f3; border-top:2px solid #333;}
+  .pv-grand{margin-top:16px; font-size:13.5px; font-weight:800; text-align:end; direction:ltr;}
+
+  ::selection{background:var(--gold-dim);}
+
+  /* ---------- GitHub sync ---------- */
+  .gh-status{
+    display:inline-flex; align-items:center; gap:4px; font-size:10.5px; color:var(--ink-dim);
+    margin-top:6px; direction:ltr;
+  }
+  .gh-status .gh-dot{width:6px; height:6px; border-radius:50%; background:var(--ink-dim); flex-shrink:0;}
+  .gh-status.ok .gh-dot{background:var(--cash);}
+  .gh-status.err .gh-dot{background:var(--danger);}
+  .gh-status.busy .gh-dot{background:var(--gold); animation:pulse 1s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(10,20,20,.55); z-index:200;
+    display:none; align-items:flex-end; justify-content:center;
+  }
+  .modal-overlay.show{display:flex;}
+  .modal-sheet{
+    width:100%; max-width:640px; background:var(--paper); border-radius:18px 18px 0 0;
+    padding:18px 16px calc(20px + env(safe-area-inset-bottom,0px));
+    max-height:88vh; overflow-y:auto; box-shadow:var(--shadow);
+  }
+  .modal-sheet h3{margin:0 0 4px; font-size:16px; font-weight:800;}
+  .modal-sheet .hint{font-size:12px; color:var(--ink-dim); margin:0 0 14px; line-height:1.6;}
+  .field{margin-bottom:10px;}
+  .field label{display:block; font-size:12px; font-weight:700; color:var(--ink-dim); margin-bottom:5px;}
+  .field input{
+    width:100%; border:1px solid var(--line); border-radius:9px; padding:10px 12px;
+    font-family:var(--font-ui); font-size:14px; background:var(--paper-2); color:var(--ink); outline:none;
+    direction:ltr; text-align:left;
+  }
+  .field input:focus{border-color:var(--teal);}
+  .modal-actions{display:flex; gap:8px; margin-top:14px;}
+  .modal-actions button{
+    flex:1; border:none; border-radius:9px; padding:12px; font-family:var(--font-ui);
+    font-size:14px; font-weight:700; cursor:pointer;
+  }
+  .modal-actions .save{background:var(--teal); color:#fff;}
+  .modal-actions .sync{background:var(--gold-dim); color:var(--gold);}
+  .modal-actions .cancel{background:var(--paper-2); color:var(--ink-dim); border:1px solid var(--line); flex:0 0 auto; padding-left:16px; padding-right:16px;}
+  .modal-close-x{position:absolute; top:14px; inset-inline-end:14px; background:none; border:none; font-size:18px; color:var(--ink-dim); cursor:pointer;}
+  .modal-sheet{position:relative;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="topbar">
+    <div class="brand">
+      <span class="title" data-i18n="appTitle">دخل اليوم</span>
+      <span class="sub" data-i18n="appSub">تسجيل دخل نهاية الدوام</span>
+    </div>
+    <div class="iconrow">
+      <button class="iconbtn" id="ghBtn" title="GitHub Sync">☁️</button>
+      <button class="iconbtn" id="langBtn" title="Language">AR</button>
+      <button class="iconbtn" id="themeBtn" title="Theme">🌙</button>
+    </div>
+  </div>
+
+  <div class="clock-card">
+    <div class="clock"><span id="clockTime">--:--:--</span><span class="ampm" id="clockAmpm"></span></div>
+    <div class="dates">
+      <div class="greg" id="gregDate">—</div>
+      <div class="hijri" id="hijriDate">—</div>
+    </div>
+    <div class="shift-row">
+      <div class="chip" data-shift="morning" data-i18n="shiftMorning">صباحي</div>
+      <div class="chip" data-shift="evening" data-i18n="shiftEvening">مسائي</div>
+    </div>
+    <div class="gh-status" id="ghStatus" style="display:none;">
+      <span class="gh-dot"></span><span id="ghStatusText"></span>
+    </div>
+  </div>
+
+  <div class="daynav">
+    <button id="prevDay">‹</button>
+    <div class="daylabel">
+      <span id="dayLabelMain">—</span>
+      <small id="dayLabelSub" data-i18n="tapToPick">اضغط لاختيار تاريخ آخر</small>
+    </div>
+    <button id="nextDay">›</button>
+    <input type="date" id="datePicker">
+  </div>
+
+  <div class="card">
+    <h2 data-i18n="newEntry">إضافة دخل</h2>
+    <div class="amount-row">
+      <span class="cur" data-i18n="currency">ر.س</span>
+      <input type="number" inputmode="decimal" id="amountInput" placeholder="0.00" step="0.01" min="0">
+    </div>
+    <div class="method-grid" id="methodGrid"></div>
+    <input type="text" class="note-input" id="noteInput" data-i18n-ph="notePh" placeholder="ملاحظة (اسم المريض / الإجراء) — اختياري">
+    <button class="add-btn" id="addBtn" data-i18n="addBtn">إضافة إلى السجل</button>
+  </div>
+
+  <div class="ledger-head">
+    <h2 data-i18n="entriesToday">حركات اليوم</h2>
+    <span class="count" id="entryCount">0</span>
+  </div>
+  <div id="entryList"></div>
+
+</div>
+
+<div class="totalbar" id="totalbar">
+  <div class="totalbar-inner">
+    <div class="breakdown" id="breakdownRow"></div>
+    <div class="total-row">
+      <span class="lbl" data-i18n="total">الإجمالي</span>
+      <span class="val" id="totalVal">0.00</span>
+    </div>
+    <div class="toolbtns">
+      <button id="exportJsonBtn">📄<span data-i18n="expJson">JSON</span></button>
+      <button id="exportXlsxBtn">📊<span data-i18n="expXlsx">Excel</span></button>
+      <button id="importBtn">📥<span data-i18n="impFile">استيراد</span></button>
+      <button id="printBtn">🖨️<span data-i18n="printBtn">طباعة</span></button>
+      <button id="clearBtn">🗑️<span data-i18n="clearDay">مسح اليوم</span></button>
+    </div>
+  </div>
+</div>
+<input type="file" id="fileInput" accept="application/json">
+<div class="toast" id="toast"></div>
+<div id="printView"></div>
+
+<div class="modal-overlay" id="ghModal">
+  <div class="modal-sheet">
+    <button class="modal-close-x" id="ghClose">✕</button>
+    <h3 data-i18n="ghTitle">مزامنة مع GitHub</h3>
+    <p class="hint" data-i18n="ghHint">تُحفظ الحركات محلياً دائماً، وإذا فعّلت المزامنة هنا سترفع نسخة تلقائياً لملف JSON داخل مستودعك على GitHub بعد كل إضافة أو حذف.</p>
+    <div class="field">
+      <label data-i18n="ghOwner">اسم المستخدم / المنظمة</label>
+      <input type="text" id="ghOwner" placeholder="ariki1982" autocapitalize="off" autocorrect="off">
+    </div>
+    <div class="field">
+      <label data-i18n="ghRepo">اسم المستودع (Repo)</label>
+      <input type="text" id="ghRepo" placeholder="ariki1982.github.io" autocapitalize="off" autocorrect="off">
+    </div>
+    <div class="field">
+      <label data-i18n="ghPath">مسار ملف البيانات</label>
+      <input type="text" id="ghPath" placeholder="data/daily-income.json" autocapitalize="off" autocorrect="off">
+    </div>
+    <div class="field">
+      <label data-i18n="ghBranch">الفرع (Branch)</label>
+      <input type="text" id="ghBranchInput" placeholder="main" autocapitalize="off" autocorrect="off">
+    </div>
+    <div class="field">
+      <label data-i18n="ghToken">Personal Access Token</label>
+      <input type="password" id="ghToken" placeholder="github_pat_..." autocapitalize="off" autocorrect="off">
+    </div>
+    <div class="modal-actions">
+      <button class="cancel" id="ghDisconnect" data-i18n="ghDisconnect">فصل</button>
+      <button class="sync" id="ghSyncNow" data-i18n="ghSyncNow">مزامنة الآن</button>
+      <button class="save" id="ghSave" data-i18n="ghSaveBtn">حفظ</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ============ i18n ============ */
+  const I18N = {
+    ar: {
+      appTitle:"دخل اليوم", appSub:"تسجيل دخل نهاية الدوام",
+      shiftMorning:"صباحي", shiftEvening:"مسائي",
+      tapToPick:"اضغط لاختيار تاريخ آخر", today:"اليوم", yesterday:"أمس",
+      newEntry:"إضافة دخل", currency:"ر.س",
+      notePh:"ملاحظة (اسم المريض / الإجراء) — اختياري",
+      addBtn:"إضافة إلى السجل",
+      entriesToday:"حركات اليوم",
+      total:"الإجمالي",
+      expJson:"JSON", expXlsx:"Excel", impFile:"استيراد", printBtn:"طباعة", clearDay:"مسح اليوم",
+      mCash:"نقدي", mCard:"شبكة", mTransfer:"تحويل", mInsurance:"تأمين", mOther:"أخرى",
+      emptyList:"لا توجد حركات مسجلة لهذا اليوم بعد",
+      addedToast:"تمت إضافة الحركة", deletedToast:"تم حذف الحركة",
+      needAmount:"أدخل مبلغاً صحيحاً أولاً",
+      confirmClear:"سيتم حذف كل حركات هذا اليوم. متابعة؟",
+      clearedToast:"تم مسح حركات اليوم",
+      exportedJson:"تم تصدير ملف JSON", exportedXlsx:"تم تصدير ملف Excel",
+      importedOk:"تم استيراد البيانات بنجاح", importedErr:"تعذّرت قراءة الملف",
+      confirmImport:"سيتم دمج البيانات المستوردة مع سجلك الحالي. متابعة؟",
+      printedForDay:"سجل يوم",
+      downloadsUnavailable:"سيتم تنزيل الملف مباشرة",
+      sheetDate:"التاريخ", sheetTime:"الوقت", sheetShift:"الدوام", sheetMethod:"طريقة الدفع",
+      sheetNote:"ملاحظة", sheetAmount:"المبلغ", sheetName:"سجل الدخل اليومي", sheetTotal:"الإجمالي",
+      ghTitle:"مزامنة مع GitHub",
+      ghHint:"تُحفظ الحركات محلياً دائماً، وإذا فعّلت المزامنة هنا سترفع نسخة تلقائياً لملف JSON داخل مستودعك على GitHub بعد كل إضافة أو حذف.",
+      ghOwner:"اسم المستخدم / المنظمة", ghRepo:"اسم المستودع (Repo)",
+      ghPath:"مسار ملف البيانات", ghBranch:"الفرع (Branch)", ghToken:"Personal Access Token",
+      ghDisconnect:"فصل", ghSyncNow:"مزامنة الآن", ghSaveBtn:"حفظ",
+      ghMissingFields:"عبّي الحقول الأساسية أولاً (المستخدم، المستودع، الرمز)",
+      ghSavedToast:"تم حفظ إعدادات المزامنة", ghDisconnectedToast:"تم فصل المزامنة",
+      ghSyncing:"جارِ المزامنة…", ghSynced:"تمت المزامنة", ghSyncFailed:"تعذّرت المزامنة",
+      ghNotConfigured:"المزامنة غير مفعّلة", ghMerged:"تم الدمج مع GitHub بنجاح",
+      printReportTitle:"تقرير الدخل الشهري", printGrandTotal:"الإجمالي الكلي لكل الفترة", printNoData:"لا توجد أي بيانات مسجلة للطباعة"
+    },
+    en: {
+      appTitle:"Daily Income", appSub:"End-of-shift income log",
+      shiftMorning:"Morning", shiftEvening:"Evening",
+      tapToPick:"Tap to pick another date", today:"Today", yesterday:"Yesterday",
+      newEntry:"Add Income", currency:"SAR",
+      notePh:"Note (patient / procedure) — optional",
+      addBtn:"Add to log",
+      entriesToday:"Today's entries",
+      total:"Total",
+      expJson:"JSON", expXlsx:"Excel", impFile:"Import", printBtn:"Print", clearDay:"Clear day",
+      mCash:"Cash", mCard:"Card", mTransfer:"Transfer", mInsurance:"Insurance", mOther:"Other",
+      emptyList:"No entries logged for this day yet",
+      addedToast:"Entry added", deletedToast:"Entry deleted",
+      needAmount:"Enter a valid amount first",
+      confirmClear:"This will delete all of this day's entries. Continue?",
+      clearedToast:"Day cleared",
+      exportedJson:"JSON file exported", exportedXlsx:"Excel file exported",
+      importedOk:"Data imported successfully", importedErr:"Could not read that file",
+      confirmImport:"Imported data will be merged with your current log. Continue?",
+      printedForDay:"Log for",
+      downloadsUnavailable:"Downloading file directly",
+      sheetDate:"Date", sheetTime:"Time", sheetShift:"Shift", sheetMethod:"Method",
+      sheetNote:"Note", sheetAmount:"Amount", sheetName:"Daily Income Log", sheetTotal:"Total",
+      ghTitle:"GitHub Sync",
+      ghHint:"Entries always save locally. Turning this on also pushes a JSON copy to your GitHub repo automatically after every add or delete.",
+      ghOwner:"Username / Org", ghRepo:"Repository name",
+      ghPath:"Data file path", ghBranch:"Branch", ghToken:"Personal Access Token",
+      ghDisconnect:"Disconnect", ghSyncNow:"Sync now", ghSaveBtn:"Save",
+      ghMissingFields:"Fill in owner, repo and token first",
+      ghSavedToast:"Sync settings saved", ghDisconnectedToast:"Sync disconnected",
+      ghSyncing:"Syncing…", ghSynced:"Synced", ghSyncFailed:"Sync failed",
+      ghNotConfigured:"Sync not enabled", ghMerged:"Merged with GitHub successfully",
+      printReportTitle:"Monthly Income Report", printGrandTotal:"Grand total for the whole period", printNoData:"No data recorded to print"
+    }
+  };
+
+  const METHODS = [
+    {id:"cash", key:"mCash", color:"var(--cash)"},
+    {id:"card", key:"mCard", color:"var(--card)"},
+    {id:"transfer", key:"mTransfer", color:"var(--transfer)"},
+    {id:"insurance", key:"mInsurance", color:"var(--insurance)"},
+    {id:"other", key:"mOther", color:"var(--other)"}
+  ];
+
+  const STORE_KEY = "tmc_daily_income_v1";
+
+  /* ============ state ============ */
+  let state = loadStore();
+  let lang = state.settings.lang || "ar";
+  let theme = state.settings.theme || "auto";
+  let currentDate = todayStr();
+  let currentShift = state.settings.lastShift || "morning";
+  let selectedMethod = "cash";
+
+  function loadStore(){
+    try{
+      const raw = localStorage.getItem(STORE_KEY);
+      if(raw){
+        const parsed = JSON.parse(raw);
+        if(parsed && typeof parsed === "object"){
+          parsed.entries = parsed.entries || {};
+          parsed.settings = parsed.settings || {};
+          return parsed;
+        }
+      }
+    }catch(e){}
+    return {entries:{}, settings:{}};
+  }
+  function saveStore(){
+    try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }catch(e){}
+  }
+
+  /* ============ GitHub sync ============ */
+  const GH_KEY = "tmc_daily_income_gh_sync_v1";
+  let ghCfg = loadGhCfg();
+  let ghSyncTimer = null;
+
+  function loadGhCfg(){
+    try{
+      const raw = localStorage.getItem(GH_KEY);
+      if(raw) return JSON.parse(raw);
+    }catch(e){}
+    return null;
+  }
+  function saveGhCfg(cfg){
+    ghCfg = cfg;
+    try{ localStorage.setItem(GH_KEY, JSON.stringify(cfg)); }catch(e){}
+  }
+  function clearGhCfg(){
+    ghCfg = null;
+    try{ localStorage.removeItem(GH_KEY); }catch(e){}
+  }
+  function ghApiUrl(){
+    return `https://api.github.com/repos/${ghCfg.owner}/${ghCfg.repo}/contents/${ghCfg.path}`;
+  }
+  function ghHeaders(){
+    return {
+      "Authorization": "Bearer " + ghCfg.token,
+      "Accept": "application/vnd.github+json",
+      "Content-Type": "application/json"
+    };
+  }
+  function b64EncodeUtf8(str){
+    return btoa(unescape(encodeURIComponent(str)));
+  }
+  function b64DecodeUtf8(b64){
+    return decodeURIComponent(escape(atob(b64.replace(/\n/g,""))));
+  }
+  function setGhStatus(kind, text){
+    const el = document.getElementById("ghStatus");
+    const txt = document.getElementById("ghStatusText");
+    if(!el || !txt) return;
+    if(kind === "err"){
+      console.warn("GitHub sync:", text);
+      el.style.display = "none";
+      return;
+    }
+    el.style.display = "inline-flex";
+    el.className = "gh-status" + (kind ? " " + kind : "");
+    txt.textContent = text;
+  }
+
+  async function ghGetRemote(){
+    const res = await fetch(ghApiUrl() + `?ref=${encodeURIComponent(ghCfg.branch || "main")}&_=${Date.now()}`, {
+      headers: ghHeaders()
+    });
+    if(res.status === 404) return {exists:false, sha:null, data:null};
+    if(!res.ok) throw new Error("GET " + res.status);
+    const json = await res.json();
+    const content = b64DecodeUtf8(json.content || "");
+    let data = null;
+    try{ data = JSON.parse(content); }catch(e){ data = null; }
+    return {exists:true, sha:json.sha, data};
+  }
+
+  async function ghPutRemote(sha, dataObj){
+    const body = {
+      message: "Daily income update — " + new Date().toISOString(),
+      content: b64EncodeUtf8(JSON.stringify(dataObj, null, 2)),
+      branch: ghCfg.branch || "main"
+    };
+    if(sha) body.sha = sha;
+    const res = await fetch(ghApiUrl(), {
+      method: "PUT",
+      headers: ghHeaders(),
+      body: JSON.stringify(body)
+    });
+    if(!res.ok){
+      const t = await res.text().catch(()=> "");
+      throw new Error("PUT " + res.status + " " + t.slice(0,150));
+    }
+    return res.json();
+  }
+
+  function mergeEntries(a, b){
+    const merged = {};
+    [a, b].forEach(store=>{
+      if(!store || !store.entries) return;
+      Object.keys(store.entries).forEach(date=>{
+        if(!merged[date]) merged[date] = [];
+        const existingIds = new Set(merged[date].map(x=>x.id));
+        (store.entries[date] || []).forEach(en=>{
+          if(!existingIds.has(en.id)){ merged[date].push(en); existingIds.add(en.id); }
+        });
+      });
+    });
+    return merged;
+  }
+
+  // Auto push after local changes — fire and forget, never blocks the UI.
+  function autoSyncPush(){
+    if(!ghCfg || !ghCfg.owner || !ghCfg.repo || !ghCfg.token) return;
+    clearTimeout(ghSyncTimer);
+    ghSyncTimer = setTimeout(async ()=>{
+      setGhStatus("busy", I18N[lang].ghSyncing);
+      try{
+        const remote = await ghGetRemote();
+        const mergedEntries = remote.exists ? mergeEntries(remote.data, state) : state.entries;
+        const payload = {entries: mergedEntries, settings: {}};
+        state.entries = mergedEntries;
+        saveStore();
+        renderEntries();
+        await ghPutRemote(remote.sha, payload);
+        setGhStatus("ok", I18N[lang].ghSynced + " · " + new Date().toLocaleTimeString(lang==="ar"?"ar-SA-u-ca-gregory":"en-US-u-ca-gregory", {hour:"2-digit", minute:"2-digit"}));
+      }catch(e){
+        setGhStatus("err", I18N[lang].ghSyncFailed + ": " + e.message);
+      }
+    }, 900);
+  }
+
+  async function manualSyncNow(){
+    if(!ghCfg || !ghCfg.owner || !ghCfg.repo || !ghCfg.token){
+      toast(I18N[lang].ghMissingFields);
+      return;
+    }
+    setGhStatus("busy", I18N[lang].ghSyncing);
+    try{
+      const remote = await ghGetRemote();
+      const mergedEntries = remote.exists ? mergeEntries(remote.data, state) : state.entries;
+      state.entries = mergedEntries;
+      saveStore();
+      renderDayNav(); renderEntries();
+      const payload = {entries: mergedEntries, settings: {}};
+      await ghPutRemote(remote.sha, payload);
+      setGhStatus("ok", I18N[lang].ghSynced);
+      toast(I18N[lang].ghMerged);
+    }catch(e){
+      setGhStatus("err", I18N[lang].ghSyncFailed + ": " + e.message);
+      toast(I18N[lang].ghSyncFailed + ": " + e.message);
+    }
+  }
+
+  async function autoPullOnLoad(){
+    if(!ghCfg || !ghCfg.owner || !ghCfg.repo || !ghCfg.token) return;
+    setGhStatus("busy", I18N[lang].ghSyncing);
+    try{
+      const remote = await ghGetRemote();
+      if(remote.exists && remote.data){
+        state.entries = mergeEntries(remote.data, state);
+        saveStore();
+        renderDayNav(); renderEntries();
+      }
+      setGhStatus("ok", I18N[lang].ghSynced);
+    }catch(e){
+      setGhStatus("err", I18N[lang].ghSyncFailed + ": " + e.message);
+    }
+  }
+
+  function initGhUI(){
+    const modal = document.getElementById("ghModal");
+    document.getElementById("ghBtn").addEventListener("click", ()=>{
+      if(ghCfg){
+        document.getElementById("ghOwner").value = ghCfg.owner || "";
+        document.getElementById("ghRepo").value = ghCfg.repo || "";
+        document.getElementById("ghPath").value = ghCfg.path || "data/daily-income.json";
+        document.getElementById("ghBranchInput").value = ghCfg.branch || "main";
+        document.getElementById("ghToken").value = ghCfg.token || "";
+      } else {
+        document.getElementById("ghPath").value = "data/daily-income.json";
+        document.getElementById("ghBranchInput").value = "main";
+      }
+      modal.classList.add("show");
+    });
+    document.getElementById("ghClose").addEventListener("click", ()=> modal.classList.remove("show"));
+    modal.addEventListener("click", (e)=>{ if(e.target === modal) modal.classList.remove("show"); });
+
+    document.getElementById("ghSave").addEventListener("click", ()=>{
+      const owner = document.getElementById("ghOwner").value.trim();
+      const repo = document.getElementById("ghRepo").value.trim();
+      const path = document.getElementById("ghPath").value.trim() || "data/daily-income.json";
+      const branch = document.getElementById("ghBranchInput").value.trim() || "main";
+      const token = document.getElementById("ghToken").value.trim();
+      if(!owner || !repo || !token){ toast(I18N[lang].ghMissingFields); return; }
+      saveGhCfg({owner, repo, path, branch, token});
+      modal.classList.remove("show");
+      toast(I18N[lang].ghSavedToast);
+      manualSyncNow();
+    });
+    document.getElementById("ghSyncNow").addEventListener("click", manualSyncNow);
+    document.getElementById("ghDisconnect").addEventListener("click", ()=>{
+      clearGhCfg();
+      document.getElementById("ghStatus").style.display = "none";
+      modal.classList.remove("show");
+      toast(I18N[lang].ghDisconnectedToast);
+    });
+    if(ghCfg && ghCfg.owner && ghCfg.repo && ghCfg.token) setGhStatus("", I18N[lang].ghSynced);
+  }
+
+  function todayStr(){
+    const d = new Date();
+    return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+  }
+  function dateFromStr(s){
+    const [y,m,d] = s.split("-").map(Number);
+    return new Date(y, m-1, d);
+  }
+  function shiftDate(s, delta){
+    const d = dateFromStr(s);
+    d.setDate(d.getDate()+delta);
+    return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+  }
+
+  /* ============ Hijri ============ */
+  const HIJRI_MONTHS = {
+    ar:["محرم","صفر","ربيع الأول","ربيع الآخر","جمادى الأولى","جمادى الآخرة","رجب","شعبان","رمضان","شوال","ذو القعدة","ذو الحجة"],
+    en:["Muharram","Safar","Rabi' al-awwal","Rabi' al-thani","Jumada al-awwal","Jumada al-thani","Rajab","Sha'ban","Ramadan","Shawwal","Dhu al-Qi'dah","Dhu al-Hijjah"]
+  };
+  let intlHijriOK = null;
+  function checkIntlHijri(){
+    if(intlHijriOK !== null) return intlHijriOK;
+    try{
+      const f = new Intl.DateTimeFormat("en-u-ca-islamic-umalqura", {day:"numeric"});
+      intlHijriOK = f.resolvedOptions().calendar === "islamic-umalqura";
+    }catch(e){ intlHijriOK = false; }
+    return intlHijriOK;
+  }
+  function fallbackHijri(date){
+    let day = date.getDate(), month = date.getMonth()+1, year = date.getFullYear();
+    let m = month, y = year;
+    if(m < 3){ y -= 1; m += 12; }
+    const a = Math.floor(y/100);
+    const b = 2 - a + Math.floor(a/4);
+    let jd = Math.floor(365.25*(y+4716)) + Math.floor(30.6001*(m+1)) + day + b - 1524;
+    let l = jd - 1948440 + 10632;
+    const n = Math.floor((l-1)/10631);
+    l = l - 10631*n + 354;
+    const j = (Math.floor((10985-l)/5316))*(Math.floor((50*l)/17719)) + (Math.floor(l/5670))*(Math.floor((43*l)/15238));
+    l = l - (Math.floor((30-j)/15))*(Math.floor((17719*j)/50)) - (Math.floor(j/16))*(Math.floor((15238*j)/43)) + 29;
+    const hMonth = Math.floor((24*l)/709);
+    const hDay = l - Math.floor((709*hMonth)/24);
+    const hYear = 30*n + j - 30;
+    return {day:hDay, month:hMonth, year:hYear};
+  }
+  function getHijriString(date){
+    if(checkIntlHijri()){
+      try{
+        const locale = lang === "ar" ? "ar-SA-u-ca-islamic-umalqura" : "en-u-ca-islamic-umalqura";
+        const fmt = new Intl.DateTimeFormat(locale, {day:"numeric", month:"long", year:"numeric"});
+        return fmt.format(date);
+      }catch(e){}
+    }
+    const h = fallbackHijri(date);
+    const mName = HIJRI_MONTHS[lang][h.month-1] || "";
+    return lang==="ar" ? `${h.day} ${mName} ${h.year}` : `${h.day} ${mName} ${h.year}`;
+  }
+
+  /* ============ clock ============ */
+  function tickClock(){
+    const now = new Date();
+    let h = now.getHours();
+    const m = String(now.getMinutes()).padStart(2,"0");
+    const s = String(now.getSeconds()).padStart(2,"0");
+    const isPM = h >= 12;
+    let h12 = h % 12; if(h12===0) h12 = 12;
+    document.getElementById("clockTime").textContent = `${String(h12).padStart(2,"0")}:${m}:${s}`;
+    document.getElementById("clockAmpm").textContent = lang==="ar" ? (isPM?"م":"ص") : (isPM?"PM":"AM");
+
+    const gregLocale = lang==="ar" ? "ar-SA-u-ca-gregory" : "en-US-u-ca-gregory";
+    const gregFmt = new Intl.DateTimeFormat(gregLocale, {weekday:"long", day:"numeric", month:"long", year:"numeric"});
+    document.getElementById("gregDate").textContent = gregFmt.format(now);
+    document.getElementById("hijriDate").textContent = getHijriString(now);
+  }
+
+  /* ============ i18n apply ============ */
+  function applyI18n(){
+    const dict = I18N[lang];
+    document.documentElement.lang = lang;
+    document.documentElement.dir = lang==="ar" ? "rtl" : "ltr";
+    document.getElementById("langBtn").textContent = lang==="ar" ? "EN" : "AR";
+    document.querySelectorAll("[data-i18n]").forEach(el=>{
+      const key = el.getAttribute("data-i18n");
+      if(dict[key] !== undefined) el.textContent = dict[key];
+    });
+    document.querySelectorAll("[data-i18n-ph]").forEach(el=>{
+      const key = el.getAttribute("data-i18n-ph");
+      if(dict[key] !== undefined) el.placeholder = dict[key];
+    });
+    renderMethods();
+    renderDayNav();
+    renderEntries();
+  }
+
+  /* ============ theme ============ */
+  function applyTheme(){
+    if(theme === "auto"){
+      document.documentElement.removeAttribute("data-theme");
+      document.getElementById("themeBtn").textContent = "🌙";
+    } else {
+      document.documentElement.setAttribute("data-theme", theme);
+      document.getElementById("themeBtn").textContent = theme==="dark" ? "☀️" : "🌙";
+    }
+  }
+  document.getElementById("themeBtn").addEventListener("click", ()=>{
+    const isDarkNow = document.documentElement.getAttribute("data-theme") === "dark" ||
+      (theme==="auto" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+    theme = isDarkNow ? "light" : "dark";
+    state.settings.theme = theme;
+    saveStore();
+    applyTheme();
+  });
+  document.getElementById("langBtn").addEventListener("click", ()=>{
+    lang = lang === "ar" ? "en" : "ar";
+    state.settings.lang = lang;
+    saveStore();
+    applyI18n();
+    tickClock();
+  });
+
+  /* ============ methods UI ============ */
+  function renderMethods(){
+    const grid = document.getElementById("methodGrid");
+    grid.innerHTML = "";
+    METHODS.forEach(m=>{
+      const btn = document.createElement("div");
+      btn.className = "method-btn" + (m.id===selectedMethod ? " active" : "");
+      btn.style.color = m.color;
+      btn.innerHTML = `<span class="dot" style="background:${m.color}"></span><span>${I18N[lang][m.key]}</span>`;
+      btn.addEventListener("click", ()=>{ selectedMethod = m.id; renderMethods(); });
+      grid.appendChild(btn);
+    });
+  }
+
+  /* ============ shift chips ============ */
+  document.querySelectorAll(".chip").forEach(chip=>{
+    chip.addEventListener("click", ()=>{
+      currentShift = chip.getAttribute("data-shift");
+      state.settings.lastShift = currentShift;
+      saveStore();
+      renderShiftChips();
+    });
+  });
+  function renderShiftChips(){
+    document.querySelectorAll(".chip").forEach(c=>{
+      c.classList.toggle("active", c.getAttribute("data-shift")===currentShift);
+    });
+  }
+
+  /* ============ day nav ============ */
+  const datePicker = document.getElementById("datePicker");
+  document.getElementById("prevDay").addEventListener("click", ()=>{
+    currentDate = shiftDate(currentDate, -1);
+    renderDayNav(); renderEntries();
+  });
+  document.getElementById("nextDay").addEventListener("click", ()=>{
+    currentDate = shiftDate(currentDate, 1);
+    renderDayNav(); renderEntries();
+  });
+  document.getElementById("dayLabelMain").parentElement.addEventListener("click", (e)=>{
+    if(e.target.tagName === "BUTTON") return;
+    datePicker.value = currentDate;
+    datePicker.showPicker ? datePicker.showPicker() : datePicker.click();
+  });
+  datePicker.addEventListener("change", ()=>{
+    if(datePicker.value){ currentDate = datePicker.value; renderDayNav(); renderEntries(); }
+  });
+  function renderDayNav(){
+    const t = todayStr();
+    const y = shiftDate(t, -1);
+    const dict = I18N[lang];
+    const d = dateFromStr(currentDate);
+    const locale = lang==="ar" ? "ar-SA-u-ca-gregory" : "en-US-u-ca-gregory";
+    let label;
+    if(currentDate === t) label = dict.today;
+    else if(currentDate === y) label = dict.yesterday;
+    else label = new Intl.DateTimeFormat(locale, {day:"numeric", month:"short", year:"numeric"}).format(d);
+    document.getElementById("dayLabelMain").textContent = label;
+    document.getElementById("dayLabelSub").textContent =
+      new Intl.DateTimeFormat(locale, {weekday:"long"}).format(d) + " · " + getHijriString(d);
+  }
+
+  /* ============ toast ============ */
+  let toastTimer;
+  function toast(msg){
+    const el = document.getElementById("toast");
+    el.textContent = msg;
+    el.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=> el.classList.remove("show"), 2200);
+  }
+
+  /* ============ entries CRUD ============ */
+  function getDayEntries(dateStr){
+    return state.entries[dateStr] || [];
+  }
+  function addEntry(){
+    const amt = parseFloat(document.getElementById("amountInput").value);
+    if(!amt || amt <= 0){ toast(I18N[lang].needAmount); return; }
+    const note = document.getElementById("noteInput").value.trim();
+    const now = new Date();
+    const entry = {
+      id: Date.now() + "_" + Math.random().toString(36).slice(2,7),
+      time: String(now.getHours()).padStart(2,"0")+":"+String(now.getMinutes()).padStart(2,"0"),
+      amount: Math.round(amt*100)/100,
+      method: selectedMethod,
+      shift: currentShift,
+      note: note
+    };
+    if(!state.entries[currentDate]) state.entries[currentDate] = [];
+    state.entries[currentDate].push(entry);
+    saveStore();
+    document.getElementById("amountInput").value = "";
+    document.getElementById("noteInput").value = "";
+    renderEntries();
+    toast(I18N[lang].addedToast);
+    autoSyncPush();
+  }
+  document.getElementById("addBtn").addEventListener("click", addEntry);
+  document.getElementById("amountInput").addEventListener("keydown", e=>{
+    if(e.key === "Enter") addEntry();
+  });
+
+  function deleteEntry(id){
+    const list = state.entries[currentDate] || [];
+    state.entries[currentDate] = list.filter(e=>e.id!==id);
+    saveStore();
+    renderEntries();
+    toast(I18N[lang].deletedToast);
+    autoSyncPush();
+  }
+
+  function renderEntries(){
+    const list = getDayEntries(currentDate).slice().sort((a,b)=> a.time.localeCompare(b.time));
+    const container = document.getElementById("entryList");
+    const dict = I18N[lang];
+    document.getElementById("entryCount").textContent = list.length;
+    if(list.length === 0){
+      container.innerHTML = `<div class="empty">${dict.emptyList}</div>`;
+    } else {
+      container.innerHTML = "";
+      list.forEach((entry, idx)=>{
+        const mDef = METHODS.find(m=>m.id===entry.method) || METHODS[4];
+        const row = document.createElement("div");
+        row.className = "entry";
+        row.innerHTML = `
+          <span class="idx">${idx+1}</span>
+          <span class="dot" style="background:${mDef.color}"></span>
+          <span class="info">
+            <div class="m">${dict[mDef.key]}${entry.shift ? " · " + dict[entry.shift==="morning"?"shiftMorning":"shiftEvening"] : ""}</div>
+            ${entry.note ? `<div class="n">${escapeHtml(entry.note)}</div>` : ""}
+          </span>
+          <span class="time">${entry.time}</span>
+          <span class="amt">${entry.amount.toFixed(2)}</span>
+          <button class="del" data-id="${entry.id}">×</button>
+        `;
+        container.appendChild(row);
+      });
+      container.querySelectorAll(".del").forEach(btn=>{
+        btn.addEventListener("click", ()=> deleteEntry(btn.getAttribute("data-id")));
+      });
+    }
+    renderTotals(list);
+  }
+
+  function renderTotals(list){
+    const total = list.reduce((s,e)=> s + e.amount, 0);
+    document.getElementById("totalVal").textContent = total.toFixed(2);
+    const byMethod = {};
+    METHODS.forEach(m=> byMethod[m.id]=0);
+    list.forEach(e=> byMethod[e.method] = (byMethod[e.method]||0) + e.amount);
+    const bd = document.getElementById("breakdownRow");
+    bd.innerHTML = "";
+    METHODS.forEach(m=>{
+      if(byMethod[m.id] > 0){
+        const chip = document.createElement("span");
+        chip.className = "bd-chip";
+        chip.style.color = m.color;
+        chip.textContent = `${I18N[lang][m.key]} ${byMethod[m.id].toFixed(2)}`;
+        bd.appendChild(chip);
+      }
+    });
+  }
+
+  function escapeHtml(s){
+    return s.replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  }
+
+  document.getElementById("clearBtn").addEventListener("click", ()=>{
+    if(getDayEntries(currentDate).length === 0) return;
+    if(!confirm(I18N[lang].confirmClear)) return;
+    delete state.entries[currentDate];
+    saveStore();
+    renderEntries();
+    toast(I18N[lang].clearedToast);
+  });
+
+  /* ============ downloads ============ */
+  let downloadsCap = null;
+  async function initDownloads(){
+    try{
+      if(window.claude && typeof window.claude.use === "function"){
+        downloadsCap = await window.claude.use("downloads");
+      }
+    }catch(e){ downloadsCap = null; }
+  }
+  async function saveFile(filename, blob){
+    if(downloadsCap){
+      try{
+        const buf = await blob.arrayBuffer();
+        await downloadsCap.save({filename, data: buf});
+        return true;
+      }catch(e){ /* fall through to direct download */ }
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=> URL.revokeObjectURL(url), 4000);
+    return true;
+  }
+
+  function allEntriesFlat(){
+    const rows = [];
+    Object.keys(state.entries).sort().forEach(date=>{
+      (state.entries[date]||[]).forEach(e=> rows.push(Object.assign({date}, e)));
+    });
+    return rows;
+  }
+
+  document.getElementById("exportJsonBtn").addEventListener("click", async ()=>{
+    const blob = new Blob([JSON.stringify(state, null, 2)], {type:"application/json"});
+    await saveFile(`daily-income-${currentDate}.json`, blob);
+    toast(I18N[lang].exportedJson);
+  });
+
+  document.getElementById("exportXlsxBtn").addEventListener("click", async ()=>{
+    if(typeof XLSX === "undefined"){ toast(I18N[lang].importedErr); return; }
+    const dict = I18N[lang];
+    const rows = allEntriesFlat();
+    const data = [[dict.sheetDate, dict.sheetTime, dict.sheetShift, dict.sheetMethod, dict.sheetNote, dict.sheetAmount]];
+    let grand = 0;
+    rows.forEach(r=>{
+      grand += r.amount;
+      data.push([
+        r.date, r.time,
+        r.shift ? dict[r.shift==="morning"?"shiftMorning":"shiftEvening"] : "",
+        dict[(METHODS.find(m=>m.id===r.method)||METHODS[4]).key],
+        r.note || "",
+        r.amount
+      ]);
+    });
+    data.push(["", "", "", "", dict.sheetTotal, grand]);
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    ws["!cols"] = [{wch:12},{wch:8},{wch:10},{wch:12},{wch:28},{wch:12}];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, dict.sheetName.slice(0,28));
+    const out = XLSX.write(wb, {bookType:"xlsx", type:"array"});
+    const blob = new Blob([out], {type:"application/octet-stream"});
+    await saveFile(`daily-income-${currentDate}.xlsx`, blob);
+    toast(I18N[lang].exportedXlsx);
+  });
+
+  document.getElementById("importBtn").addEventListener("click", ()=>{
+    document.getElementById("fileInput").click();
+  });
+  document.getElementById("fileInput").addEventListener("change", (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = ()=>{
+      try{
+        const parsed = JSON.parse(reader.result);
+        if(!parsed || typeof parsed !== "object" || !parsed.entries) throw new Error("bad shape");
+        if(!confirm(I18N[lang].confirmImport)){ e.target.value=""; return; }
+        Object.keys(parsed.entries).forEach(date=>{
+          const incoming = parsed.entries[date] || [];
+          const existing = state.entries[date] || [];
+          const existingIds = new Set(existing.map(x=>x.id));
+          incoming.forEach(en=>{ if(!existingIds.has(en.id)) existing.push(en); });
+          state.entries[date] = existing;
+        });
+        saveStore();
+        renderDayNav(); renderEntries();
+        toast(I18N[lang].importedOk);
+      }catch(err){
+        toast(I18N[lang].importedErr);
+      }
+      e.target.value = "";
+    };
+    reader.readAsText(file);
+  });
+
+  function buildPrintView(){
+    const dict = I18N[lang];
+    const rows = allEntriesFlat(); // {date, time, shift, method, note, amount, ...}
+    const container = document.getElementById("printView");
+    if(rows.length === 0){
+      container.innerHTML = `<div class="pv-month"><p class="pv-sub">${dict.printNoData}</p></div>`;
+      return;
+    }
+    const byMonth = {};
+    rows.forEach(r=>{
+      const monthKey = r.date.slice(0,7); // YYYY-MM
+      if(!byMonth[monthKey]) byMonth[monthKey] = [];
+      byMonth[monthKey].push(r);
+    });
+    const monthKeys = Object.keys(byMonth).sort();
+    const locale = lang==="ar" ? "ar-SA-u-ca-gregory" : "en-US-u-ca-gregory";
+    let grand = 0;
+    let html = "";
+    monthKeys.forEach(mk=>{
+      const items = byMonth[mk].slice().sort((a,b)=> (a.date+a.time).localeCompare(b.date+b.time));
+      const [y,m] = mk.split("-").map(Number);
+      const monthLabel = new Intl.DateTimeFormat(locale, {month:"long", year:"numeric"}).format(new Date(y, m-1, 1));
+      let monthTotal = 0;
+      let bodyRows = "";
+      items.forEach(r=>{
+        monthTotal += r.amount;
+        const mDef = METHODS.find(x=>x.id===r.method) || METHODS[4];
+        const shiftLabel = r.shift ? dict[r.shift==="morning"?"shiftMorning":"shiftEvening"] : "";
+        bodyRows += `<tr>
+          <td>${r.date}</td>
+          <td class="num">${r.time}</td>
+          <td>${shiftLabel}</td>
+          <td>${dict[mDef.key]}</td>
+          <td>${escapeHtml(r.note || "")}</td>
+          <td class="num">${r.amount.toFixed(2)}</td>
+        </tr>`;
+      });
+      grand += monthTotal;
+      html += `<div class="pv-month">
+        <h1 class="pv-title">${dict.printReportTitle} — ${monthLabel}</h1>
+        <p class="pv-sub">${dict.currency} · ${items.length} ${dict.entriesToday}</p>
+        <table class="pv-table">
+          <thead><tr>
+            <th>${dict.sheetDate}</th><th class="num">${dict.sheetTime}</th><th>${dict.sheetShift}</th>
+            <th>${dict.sheetMethod}</th><th>${dict.sheetNote}</th><th class="num">${dict.sheetAmount}</th>
+          </tr></thead>
+          <tbody>${bodyRows}</tbody>
+          <tfoot><tr class="pv-total-row">
+            <td colspan="5">${dict.sheetTotal} — ${monthLabel}</td>
+            <td class="num">${monthTotal.toFixed(2)}</td>
+          </tr></tfoot>
+        </table>
+        ${mk === monthKeys[monthKeys.length-1] ? `<div class="pv-grand">${dict.printGrandTotal}: ${grand.toFixed(2)} ${dict.currency}</div>` : ""}
+      </div>`;
+    });
+    container.innerHTML = html;
+  }
+  function buildReportText(){
+    const dict = I18N[lang];
+    const rows = allEntriesFlat();
+    if(rows.length === 0) return dict.printNoData;
+    const byMonth = {};
+    rows.forEach(r=>{
+      const monthKey = r.date.slice(0,7);
+      if(!byMonth[monthKey]) byMonth[monthKey] = [];
+      byMonth[monthKey].push(r);
+    });
+    const monthKeys = Object.keys(byMonth).sort();
+    const locale = lang==="ar" ? "ar-SA-u-ca-gregory" : "en-US-u-ca-gregory";
+    let grand = 0;
+    let text = `${dict.printReportTitle}\n\n`;
+    monthKeys.forEach(mk=>{
+      const items = byMonth[mk].slice().sort((a,b)=> (a.date+a.time).localeCompare(b.date+b.time));
+      const [y,m] = mk.split("-").map(Number);
+      const monthLabel = new Intl.DateTimeFormat(locale, {month:"long", year:"numeric"}).format(new Date(y, m-1, 1));
+      let monthTotal = 0;
+      text += `— ${monthLabel} —\n`;
+      items.forEach(r=>{
+        monthTotal += r.amount;
+        const mDef = METHODS.find(x=>x.id===r.method) || METHODS[4];
+        const shiftLabel = r.shift ? dict[r.shift==="morning"?"shiftMorning":"shiftEvening"] : "";
+        text += `${r.date} ${r.time} ${shiftLabel} ${dict[mDef.key]}${r.note ? (" - " + r.note) : ""} : ${r.amount.toFixed(2)}\n`;
+      });
+      grand += monthTotal;
+      text += `${dict.sheetTotal} ${monthLabel}: ${monthTotal.toFixed(2)} ${dict.currency}\n\n`;
+    });
+    text += `${dict.printGrandTotal}: ${grand.toFixed(2)} ${dict.currency}`;
+    return text;
+  }
+
+  async function generateReportPdfFile(){
+    buildPrintView();
+    const el = document.getElementById("printView");
+    el.classList.add("pv-capturing");
+    await new Promise(r=> setTimeout(r, 60)); // let layout/fonts settle
+    let file = null;
+    try{
+      if(typeof html2canvas === "function" && window.jspdf && window.jspdf.jsPDF){
+        const canvas = await html2canvas(el, {backgroundColor:"#ffffff", scale:2});
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({unit:"pt", format:"a4"});
+        const pageW = pdf.internal.pageSize.getWidth();
+        const pageH = pdf.internal.pageSize.getHeight();
+        const margin = 20;
+        const usableW = pageW - margin*2;
+        const usableH = pageH - margin*2;
+        const imgWidth = usableW;
+        const pxPerPtRatio = canvas.width / imgWidth; // canvas px per output pt
+        const pageSliceHeightPx = usableH * pxPerPtRatio; // how many canvas px fit one PDF page
+
+        let sY = 0;
+        let firstPage = true;
+        while(sY < canvas.height){
+          const sliceH = Math.min(pageSliceHeightPx, canvas.height - sY);
+          const pageCanvas = document.createElement("canvas");
+          pageCanvas.width = canvas.width;
+          pageCanvas.height = sliceH;
+          const ctx = pageCanvas.getContext("2d");
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+          ctx.drawImage(canvas, 0, sY, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
+          const sliceImgHeight = sliceH / pxPerPtRatio;
+          if(!firstPage) pdf.addPage();
+          pdf.addImage(pageCanvas.toDataURL("image/png"), "PNG", margin, margin, imgWidth, sliceImgHeight);
+          firstPage = false;
+          sY += sliceH;
+        }
+        const blob = pdf.output("blob");
+        file = new File([blob], `daily-income-${currentDate}.pdf`, {type:"application/pdf"});
+      }
+    }catch(e){ file = null; }
+    el.classList.remove("pv-capturing");
+    return file;
+  }
+
+  async function shareOrPrint(){
+    const dict = I18N[lang];
+
+    // 1) Try sharing a proper PDF report (best option, legible in any theme)
+    const file = await generateReportPdfFile();
+    if(file && navigator.canShare && navigator.canShare({files:[file]})){
+      try{
+        await navigator.share({ files:[file], title: dict.printReportTitle });
+        return;
+      }catch(err){
+        if(err && err.name === "AbortError") return; // user cancelled
+      }
+    }
+
+    // 2) Fall back to plain text share
+    if(navigator.share){
+      try{
+        await navigator.share({ title: dict.printReportTitle, text: buildReportText() });
+        return;
+      }catch(err){
+        if(err && err.name === "AbortError") return;
+      }
+    }
+
+    // 3) Last resort: classic browser print
+    buildPrintView();
+    window.print();
+  }
+  document.getElementById("printBtn").addEventListener("click", shareOrPrint);
+
+  /* ============ keep list clear of the sticky total bar ============ */
+  function watchTotalbarHeight(){
+    const bar = document.getElementById("totalbar");
+    if(!bar) return;
+    const update = ()=>{
+      const h = bar.getBoundingClientRect().height;
+      document.documentElement.style.setProperty("--totalbar-h", (h + 10) + "px");
+    };
+    if(window.ResizeObserver){
+      new ResizeObserver(update).observe(bar);
+    } else {
+      window.addEventListener("resize", update);
+      setInterval(update, 1000);
+    }
+    update();
+  }
+
+  /* ============ init ============ */
+  function init(){
+    applyTheme();
+    applyI18n();
+    renderShiftChips();
+    renderMethods();
+    renderDayNav();
+    renderEntries();
+    tickClock();
+    setInterval(tickClock, 1000);
+    initDownloads();
+    watchTotalbarHeight();
+    initGhUI();
+    autoPullOnLoad();
+  }
+  init();
+})();
+</script>
+</body>
+</html>
