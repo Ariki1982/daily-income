@@ -8,8 +8,6 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
   :root{
     --bg:#F6F3EA;
@@ -146,6 +144,20 @@
     border:none; background:transparent; color:var(--ink); font-family:var(--font-ui);
     font-size:12px; opacity:0; position:absolute; width:1px; height:1px;
   }
+  .month-total{
+    display:flex; align-items:center; justify-content:space-between;
+    background:var(--gold-dim); border:1px solid var(--gold); border-radius:var(--radius);
+    padding:6px 6px; margin:0 0 14px;
+  }
+  .month-total .mt-mid{display:flex; flex-direction:column; align-items:center; gap:1px; flex:1;}
+  .month-total .mt-label{font-size:12px; font-weight:700; color:var(--gold);}
+  .month-total .mt-val{font-family:var(--font-num); font-size:16px; font-weight:800; color:var(--gold); direction:ltr;}
+  .month-total .mt-arrow{
+    border:none; background:transparent; color:var(--gold); font-size:19px; font-weight:800;
+    cursor:pointer; width:34px; height:34px; border-radius:8px; flex-shrink:0;
+  }
+  .month-total .mt-arrow:hover{background:var(--gold-dim);}
+  .month-total .mt-arrow:active{transform:scale(.92);}
 
   /* ---------- Form card ---------- */
   .card{
@@ -251,16 +263,12 @@
     #printView{display:block !important;}
   }
   #printView{display:none;}
-  #printView.pv-capturing{
-    display:block; position:fixed; top:0; left:-10000px; z-index:-1;
-    width:760px; background:#fff; color:#111; padding:18px; direction:rtl;
-  }
   .pv-month{padding:14px 6px; page-break-after:always;}
   .pv-month:last-child{page-break-after:auto;}
   .pv-title{font-size:18px; font-weight:800; margin:0 0 2px; color:#111;}
   .pv-sub{font-size:11.5px; color:#555; margin:0 0 12px;}
   .pv-table{width:100%; border-collapse:collapse; font-size:11.5px; font-family:var(--font-ui);}
-  .pv-table th, .pv-table td{border:1px solid #999; padding:5px 7px; text-align:start; color:#111;}
+  .pv-table th, .pv-table td{border:1px solid #999; padding:5px 7px; text-align:start;}
   .pv-table th{background:#eee; font-weight:700;}
   .pv-table td.num, .pv-table th.num{font-family:var(--font-num); direction:ltr; text-align:end;}
   .pv-total-row td{font-weight:800; background:#f3f3f3; border-top:2px solid #333;}
@@ -349,6 +357,15 @@
     </div>
     <button id="nextDay">›</button>
     <input type="date" id="datePicker">
+  </div>
+
+  <div class="month-total" id="monthTotalRow">
+    <button class="mt-arrow" id="prevMonth">‹</button>
+    <span class="mt-mid">
+      <span class="mt-label" id="monthTotalLabel">—</span>
+      <span class="mt-val" id="monthTotalVal">0.00</span>
+    </span>
+    <button class="mt-arrow" id="nextMonth">›</button>
   </div>
 
   <div class="card">
@@ -461,7 +478,8 @@
       ghSavedToast:"تم حفظ إعدادات المزامنة", ghDisconnectedToast:"تم فصل المزامنة",
       ghSyncing:"جارِ المزامنة…", ghSynced:"تمت المزامنة", ghSyncFailed:"تعذّرت المزامنة",
       ghNotConfigured:"المزامنة غير مفعّلة", ghMerged:"تم الدمج مع GitHub بنجاح",
-      printReportTitle:"تقرير الدخل الشهري", printGrandTotal:"الإجمالي الكلي لكل الفترة", printNoData:"لا توجد أي بيانات مسجلة للطباعة"
+      printReportTitle:"تقرير الدخل الشهري", printGrandTotal:"الإجمالي الكلي لكل الفترة", printNoData:"لا توجد أي بيانات مسجلة للطباعة",
+      monthTotalPrefix:"إجمالي"
     },
     en: {
       appTitle:"Daily Income", appSub:"End-of-shift income log",
@@ -495,7 +513,8 @@
       ghSavedToast:"Sync settings saved", ghDisconnectedToast:"Sync disconnected",
       ghSyncing:"Syncing…", ghSynced:"Synced", ghSyncFailed:"Sync failed",
       ghNotConfigured:"Sync not enabled", ghMerged:"Merged with GitHub successfully",
-      printReportTitle:"Monthly Income Report", printGrandTotal:"Grand total for the whole period", printNoData:"No data recorded to print"
+      printReportTitle:"Monthly Income Report", printGrandTotal:"Grand total for the whole period", printNoData:"No data recorded to print",
+      monthTotalPrefix:"Total for"
     }
   };
 
@@ -575,11 +594,6 @@
     const el = document.getElementById("ghStatus");
     const txt = document.getElementById("ghStatusText");
     if(!el || !txt) return;
-    if(kind === "err"){
-      console.warn("GitHub sync:", text);
-      el.style.display = "none";
-      return;
-    }
     el.style.display = "inline-flex";
     el.className = "gh-status" + (kind ? " " + kind : "");
     txt.textContent = text;
@@ -744,6 +758,15 @@
     d.setDate(d.getDate()+delta);
     return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
   }
+  function shiftMonth(s, delta){
+    const d = dateFromStr(s);
+    const day = d.getDate();
+    d.setDate(1);
+    d.setMonth(d.getMonth()+delta);
+    const daysInMonth = new Date(d.getFullYear(), d.getMonth()+1, 0).getDate();
+    d.setDate(Math.min(day, daysInMonth));
+    return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+  }
 
   /* ============ Hijri ============ */
   const HIJRI_MONTHS = {
@@ -890,6 +913,14 @@
     currentDate = shiftDate(currentDate, 1);
     renderDayNav(); renderEntries();
   });
+  document.getElementById("prevMonth").addEventListener("click", ()=>{
+    currentDate = shiftMonth(currentDate, -1);
+    renderDayNav(); renderEntries();
+  });
+  document.getElementById("nextMonth").addEventListener("click", ()=>{
+    currentDate = shiftMonth(currentDate, 1);
+    renderDayNav(); renderEntries();
+  });
   document.getElementById("dayLabelMain").parentElement.addEventListener("click", (e)=>{
     if(e.target.tagName === "BUTTON") return;
     datePicker.value = currentDate;
@@ -994,6 +1025,22 @@
       });
     }
     renderTotals(list);
+    renderMonthTotal();
+  }
+
+  function renderMonthTotal(){
+    const monthKey = currentDate.slice(0,7); // YYYY-MM
+    let total = 0;
+    Object.keys(state.entries).forEach(date=>{
+      if(date.slice(0,7) === monthKey){
+        (state.entries[date] || []).forEach(en=> total += en.amount);
+      }
+    });
+    const locale = lang==="ar" ? "ar-SA-u-ca-gregory" : "en-US-u-ca-gregory";
+    const [y,m] = monthKey.split("-").map(Number);
+    const monthLabel = new Intl.DateTimeFormat(locale, {month:"long", year:"numeric"}).format(new Date(y, m-1, 1));
+    document.getElementById("monthTotalLabel").textContent = `${I18N[lang].monthTotalPrefix} ${monthLabel}`;
+    document.getElementById("monthTotalVal").textContent = total.toFixed(2) + " " + I18N[lang].currency;
   }
 
   function renderTotals(list){
@@ -1181,113 +1228,10 @@
     });
     container.innerHTML = html;
   }
-  function buildReportText(){
-    const dict = I18N[lang];
-    const rows = allEntriesFlat();
-    if(rows.length === 0) return dict.printNoData;
-    const byMonth = {};
-    rows.forEach(r=>{
-      const monthKey = r.date.slice(0,7);
-      if(!byMonth[monthKey]) byMonth[monthKey] = [];
-      byMonth[monthKey].push(r);
-    });
-    const monthKeys = Object.keys(byMonth).sort();
-    const locale = lang==="ar" ? "ar-SA-u-ca-gregory" : "en-US-u-ca-gregory";
-    let grand = 0;
-    let text = `${dict.printReportTitle}\n\n`;
-    monthKeys.forEach(mk=>{
-      const items = byMonth[mk].slice().sort((a,b)=> (a.date+a.time).localeCompare(b.date+b.time));
-      const [y,m] = mk.split("-").map(Number);
-      const monthLabel = new Intl.DateTimeFormat(locale, {month:"long", year:"numeric"}).format(new Date(y, m-1, 1));
-      let monthTotal = 0;
-      text += `— ${monthLabel} —\n`;
-      items.forEach(r=>{
-        monthTotal += r.amount;
-        const mDef = METHODS.find(x=>x.id===r.method) || METHODS[4];
-        const shiftLabel = r.shift ? dict[r.shift==="morning"?"shiftMorning":"shiftEvening"] : "";
-        text += `${r.date} ${r.time} ${shiftLabel} ${dict[mDef.key]}${r.note ? (" - " + r.note) : ""} : ${r.amount.toFixed(2)}\n`;
-      });
-      grand += monthTotal;
-      text += `${dict.sheetTotal} ${monthLabel}: ${monthTotal.toFixed(2)} ${dict.currency}\n\n`;
-    });
-    text += `${dict.printGrandTotal}: ${grand.toFixed(2)} ${dict.currency}`;
-    return text;
-  }
-
-  async function generateReportPdfFile(){
-    buildPrintView();
-    const el = document.getElementById("printView");
-    el.classList.add("pv-capturing");
-    await new Promise(r=> setTimeout(r, 60)); // let layout/fonts settle
-    let file = null;
-    try{
-      if(typeof html2canvas === "function" && window.jspdf && window.jspdf.jsPDF){
-        const canvas = await html2canvas(el, {backgroundColor:"#ffffff", scale:2});
-        const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF({unit:"pt", format:"a4"});
-        const pageW = pdf.internal.pageSize.getWidth();
-        const pageH = pdf.internal.pageSize.getHeight();
-        const margin = 20;
-        const usableW = pageW - margin*2;
-        const usableH = pageH - margin*2;
-        const imgWidth = usableW;
-        const pxPerPtRatio = canvas.width / imgWidth; // canvas px per output pt
-        const pageSliceHeightPx = usableH * pxPerPtRatio; // how many canvas px fit one PDF page
-
-        let sY = 0;
-        let firstPage = true;
-        while(sY < canvas.height){
-          const sliceH = Math.min(pageSliceHeightPx, canvas.height - sY);
-          const pageCanvas = document.createElement("canvas");
-          pageCanvas.width = canvas.width;
-          pageCanvas.height = sliceH;
-          const ctx = pageCanvas.getContext("2d");
-          ctx.fillStyle = "#ffffff";
-          ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
-          ctx.drawImage(canvas, 0, sY, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
-          const sliceImgHeight = sliceH / pxPerPtRatio;
-          if(!firstPage) pdf.addPage();
-          pdf.addImage(pageCanvas.toDataURL("image/png"), "PNG", margin, margin, imgWidth, sliceImgHeight);
-          firstPage = false;
-          sY += sliceH;
-        }
-        const blob = pdf.output("blob");
-        file = new File([blob], `daily-income-${currentDate}.pdf`, {type:"application/pdf"});
-      }
-    }catch(e){ file = null; }
-    el.classList.remove("pv-capturing");
-    return file;
-  }
-
-  async function shareOrPrint(){
-    const dict = I18N[lang];
-
-    // 1) Try sharing a proper PDF report (best option, legible in any theme)
-    const file = await generateReportPdfFile();
-    if(file && navigator.canShare && navigator.canShare({files:[file]})){
-      try{
-        await navigator.share({ files:[file], title: dict.printReportTitle });
-        return;
-      }catch(err){
-        if(err && err.name === "AbortError") return; // user cancelled
-      }
-    }
-
-    // 2) Fall back to plain text share
-    if(navigator.share){
-      try{
-        await navigator.share({ title: dict.printReportTitle, text: buildReportText() });
-        return;
-      }catch(err){
-        if(err && err.name === "AbortError") return;
-      }
-    }
-
-    // 3) Last resort: classic browser print
+  document.getElementById("printBtn").addEventListener("click", ()=>{
     buildPrintView();
     window.print();
-  }
-  document.getElementById("printBtn").addEventListener("click", shareOrPrint);
+  });
 
   /* ============ keep list clear of the sticky total bar ============ */
   function watchTotalbarHeight(){
