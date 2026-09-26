@@ -473,13 +473,22 @@
       <button id="exportXlsxBtn">📊<span data-i18n="expXlsx">Excel</span></button>
       <button id="importBtn">📥<span data-i18n="impFile">استيراد</span></button>
       <button id="printBtn">🖨️<span data-i18n="printBtn">طباعة</span></button>
-      <button id="clearBtn">🗑️<span data-i18n="clearDay">مسح اليوم</span></button>
+      <button id="searchBtn">🔍<span data-i18n="searchBtn">بحث</span></button>
     </div>
   </div>
 </div>
 <input type="file" id="fileInput" accept="application/json">
 <div class="toast" id="toast"></div>
 <div id="printView"></div>
+
+<div class="modal-overlay" id="searchModal">
+  <div class="modal-sheet">
+    <button class="modal-close-x" id="searchClose">✕</button>
+    <h3 data-i18n="searchTitle">بحث في كل الحركات</h3>
+    <input type="text" class="note-input" id="searchInput" data-i18n-ph="searchPh" placeholder="ابحث بالملاحظة، المبلغ، أو التاريخ (مثلاً 2026-09)" style="margin-bottom:12px;">
+    <div id="searchResults"></div>
+  </div>
+</div>
 
 <div class="modal-overlay" id="pinModal">
   <div class="modal-sheet">
@@ -594,7 +603,8 @@
       addBtn:"إضافة إلى السجل",
       entriesToday:"حركات اليوم",
       total:"الإجمالي",
-      expJson:"JSON", expXlsx:"Excel", impFile:"استيراد", printBtn:"طباعة", clearDay:"مسح اليوم",
+      expJson:"JSON", expXlsx:"Excel", impFile:"استيراد", printBtn:"طباعة", clearDay:"مسح اليوم", searchBtn:"بحث",
+      searchTitle:"بحث في كل الحركات", searchPh:"ابحث بالملاحظة، المبلغ، أو التاريخ (مثلاً 2026-09)", searchNoResults:"لا توجد نتائج مطابقة",
       mCash:"نقدي", mCard:"شبكة", mTransfer:"تحويل", mInsurance:"تأمين", mOther:"أخرى",
       emptyList:"لا توجد حركات مسجلة لهذا اليوم بعد",
       addedToast:"تمت إضافة الحركة", deletedToast:"تم حذف الحركة",
@@ -637,7 +647,8 @@
       addBtn:"Add to log",
       entriesToday:"Today's entries",
       total:"Total",
-      expJson:"JSON", expXlsx:"Excel", impFile:"Import", printBtn:"Print", clearDay:"Clear day",
+      expJson:"JSON", expXlsx:"Excel", impFile:"Import", printBtn:"Print", clearDay:"Clear day", searchBtn:"Search",
+      searchTitle:"Search all entries", searchPh:"Search by note, amount, or date (e.g. 2026-09)", searchNoResults:"No matching entries",
       mCash:"Cash", mCard:"Card", mTransfer:"Transfer", mInsurance:"Insurance", mOther:"Other",
       emptyList:"No entries logged for this day yet",
       addedToast:"Entry added", deletedToast:"Entry deleted",
@@ -1472,13 +1483,53 @@
     return s.replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   }
 
-  document.getElementById("clearBtn").addEventListener("click", ()=>{
-    if(getDayEntries(currentDate).length === 0) return;
-    if(!confirm(I18N[lang].confirmClear)) return;
-    delete state.entries[currentDate];
-    saveStore();
-    renderEntries();
-    toast(I18N[lang].clearedToast);
+  document.getElementById("searchBtn").addEventListener("click", ()=>{
+    document.getElementById("searchModal").classList.add("show");
+    document.getElementById("searchInput").value = "";
+    document.getElementById("searchResults").innerHTML = "";
+    setTimeout(()=> document.getElementById("searchInput").focus(), 150);
+  });
+  document.getElementById("searchClose").addEventListener("click", ()=>{
+    document.getElementById("searchModal").classList.remove("show");
+  });
+  document.getElementById("searchModal").addEventListener("click", (e)=>{
+    if(e.target.id === "searchModal") document.getElementById("searchModal").classList.remove("show");
+  });
+  document.getElementById("searchInput").addEventListener("input", ()=>{
+    const q = document.getElementById("searchInput").value.trim().toLowerCase();
+    const resEl = document.getElementById("searchResults");
+    resEl.innerHTML = "";
+    if(q.length === 0) return;
+    const dict = I18N[lang];
+    const matches = allEntriesFlat().filter(r=>{
+      return (r.note && r.note.toLowerCase().includes(q)) ||
+             String(r.amount).includes(q) ||
+             r.date.includes(q);
+    }).sort((a,b)=> (b.date+b.time).localeCompare(a.date+a.time)).slice(0, 60);
+    if(matches.length === 0){
+      resEl.innerHTML = `<div class="empty">${dict.searchNoResults}</div>`;
+      return;
+    }
+    matches.forEach(r=>{
+      const mDef = METHODS.find(x=>x.id===r.method) || METHODS[4];
+      const row = document.createElement("div");
+      row.className = "entry";
+      row.style.cursor = "pointer";
+      row.innerHTML = `
+        <span class="dot" style="background:${mDef.color}"></span>
+        <span class="info">
+          <div class="m">${r.date} · ${r.time} · ${dict[mDef.key]}</div>
+          ${r.note ? `<div class="n">${escapeHtml(r.note)}</div>` : ""}
+        </span>
+        <span class="amt">${r.amount.toFixed(2)}</span>
+      `;
+      row.addEventListener("click", ()=>{
+        currentDate = r.date;
+        document.getElementById("searchModal").classList.remove("show");
+        renderDayNav(); renderEntries();
+      });
+      resEl.appendChild(row);
+    });
   });
 
   /* ============ downloads ============ */
