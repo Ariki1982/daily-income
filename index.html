@@ -173,6 +173,29 @@
   .trend-title{font-size:12px; font-weight:700; color:var(--ink-dim);}
   #trendSvg{width:100%; height:70px; display:block;}
 
+  .field input#pinNewInput, .field input#pinConfirmInput{
+    text-align:center; letter-spacing:10px; font-size:22px; direction:ltr;
+  }
+  .lock-overlay{
+    position:fixed; inset:0; background:var(--bg); z-index:400;
+    display:none; align-items:center; justify-content:center; padding:24px;
+  }
+  .lock-overlay.show{display:flex;}
+  .lock-card{
+    max-width:320px; width:100%; text-align:center; background:var(--paper);
+    border:1px solid var(--line); border-radius:16px; padding:28px 22px; box-shadow:var(--shadow);
+  }
+  .lock-emoji{font-size:40px; margin-bottom:6px;}
+  .lock-card h3{margin:0 0 4px; font-size:17px; font-weight:800;}
+  .lock-card .hint{font-size:12.5px; color:var(--ink-dim); margin:0 0 16px;}
+  .lock-card input{
+    width:100%; border:1px solid var(--line-strong); border-radius:10px; padding:12px;
+    font-size:26px; text-align:center; letter-spacing:14px; direction:ltr; margin-bottom:8px;
+    background:var(--paper-2); color:var(--ink); outline:none; font-family:var(--font-num);
+  }
+  .lock-card input:focus{border-color:var(--teal);}
+  .lock-card .add-btn{margin-top:4px;}
+
   /* ---------- Form card ---------- */
   .card{
     background:var(--paper); border:1px solid var(--line); border-radius:14px;
@@ -297,7 +320,7 @@
   /* ---------- Print ---------- */
   @media print{
     body{background:#fff; color:#000;}
-    .wrap, .totalbar{display:none !important;}
+    .wrap, .totalbar, .modal-overlay, .lock-overlay{display:none !important;}
     #printView{display:block !important;}
   }
   #printView{display:none;}
@@ -366,6 +389,7 @@
       <span class="sub" data-i18n="appSub">تسجيل دخل نهاية الدوام</span>
     </div>
     <div class="iconrow">
+      <button class="iconbtn" id="lockBtn" title="Lock">🔒</button>
       <button class="iconbtn" id="ghBtn" title="GitHub Sync">☁️</button>
       <button class="iconbtn" id="langBtn" title="Language">AR</button>
       <button class="iconbtn" id="themeBtn" title="Theme">🌙</button>
@@ -456,6 +480,38 @@
 <input type="file" id="fileInput" accept="application/json">
 <div class="toast" id="toast"></div>
 <div id="printView"></div>
+
+<div class="modal-overlay" id="pinModal">
+  <div class="modal-sheet">
+    <button class="modal-close-x" id="pinModalClose">✕</button>
+    <h3 data-i18n="lockTitle">قفل بكود PIN</h3>
+    <p class="hint" data-i18n="lockHint">كود مكوّن من 4 أرقام يُطلب عند فتح الأداة. يُحفظ مشفّراً في هذا الجهاز فقط.</p>
+    <div class="field">
+      <label data-i18n="pinNew">الكود الجديد (4 أرقام)</label>
+      <input type="password" id="pinNewInput" inputmode="numeric" maxlength="4" placeholder="••••">
+    </div>
+    <div class="field">
+      <label data-i18n="pinConfirm">تأكيد الكود</label>
+      <input type="password" id="pinConfirmInput" inputmode="numeric" maxlength="4" placeholder="••••">
+    </div>
+    <p class="hint" id="pinModalError" style="color:var(--danger); display:none;"></p>
+    <div class="modal-actions">
+      <button class="cancel" id="pinRemoveBtn" data-i18n="pinRemove" style="display:none;">إزالة القفل</button>
+      <button class="save" id="pinSaveBtn" data-i18n="pinSave">حفظ</button>
+    </div>
+  </div>
+</div>
+
+<div class="lock-overlay" id="lockOverlay">
+  <div class="lock-card">
+    <div class="lock-emoji">🔒</div>
+    <h3 data-i18n="lockScreenTitle">الأداة مقفلة</h3>
+    <p class="hint" data-i18n="lockScreenHint">أدخل كود الـ PIN لفتح دخل اليوم</p>
+    <input type="password" id="pinInput" inputmode="numeric" maxlength="4" placeholder="••••">
+    <p class="hint" id="pinError" style="color:var(--danger); min-height:16px;"></p>
+    <button class="add-btn" id="unlockBtn" data-i18n="unlockBtn">فتح</button>
+  </div>
+</div>
 
 <div class="modal-overlay" id="ghModal">
   <div class="modal-sheet">
@@ -564,7 +620,13 @@
       printReportTitle:"تقرير الدخل الشهري", printGrandTotal:"الإجمالي الكلي لكل الفترة", printNoData:"لا توجد أي بيانات مسجلة للطباعة",
       monthTotalPrefix:"إجمالي",
       undoBtn:"تراجع", avgPerDay:"متوسط اليوم", trendTitle:"الاتجاه الشهري (آخر 6 أشهر)",
-      editingBanner:"تعديل حركة موجودة", cancelEdit:"إلغاء", saveEdit:"حفظ التعديل", savedEditToast:"تم حفظ التعديل"
+      editingBanner:"تعديل حركة موجودة", cancelEdit:"إلغاء", saveEdit:"حفظ التعديل", savedEditToast:"تم حفظ التعديل",
+      lockTitle:"قفل بكود PIN", lockHint:"كود مكوّن من 4 أرقام يُطلب عند فتح الأداة. يُحفظ مشفّراً في هذا الجهاز فقط.",
+      pinNew:"الكود الجديد (4 أرقام)", pinConfirm:"تأكيد الكود", pinSave:"حفظ", pinRemove:"إزالة القفل",
+      pinMismatch:"الكودان غير متطابقين", pinInvalid:"أدخل 4 أرقام بالضبط",
+      pinSetToast:"تم تفعيل القفل", pinRemovedToast:"تم إلغاء القفل",
+      lockScreenTitle:"الأداة مقفلة", lockScreenHint:"أدخل كود الـ PIN لفتح دخل اليوم",
+      unlockBtn:"فتح", wrongPin:"كود غير صحيح"
     },
     en: {
       appTitle:"Daily Income", appSub:"End-of-shift income log",
@@ -601,7 +663,13 @@
       printReportTitle:"Monthly Income Report", printGrandTotal:"Grand total for the whole period", printNoData:"No data recorded to print",
       monthTotalPrefix:"Total for",
       undoBtn:"Undo", avgPerDay:"Daily average", trendTitle:"Monthly trend (last 6 months)",
-      editingBanner:"Editing existing entry", cancelEdit:"Cancel", saveEdit:"Save changes", savedEditToast:"Changes saved"
+      editingBanner:"Editing existing entry", cancelEdit:"Cancel", saveEdit:"Save changes", savedEditToast:"Changes saved",
+      lockTitle:"PIN lock", lockHint:"A 4-digit code required to open the tool. Stored hashed on this device only.",
+      pinNew:"New code (4 digits)", pinConfirm:"Confirm code", pinSave:"Save", pinRemove:"Remove lock",
+      pinMismatch:"Codes don't match", pinInvalid:"Enter exactly 4 digits",
+      pinSetToast:"Lock enabled", pinRemovedToast:"Lock removed",
+      lockScreenTitle:"Tool is locked", lockScreenHint:"Enter your PIN to open Daily Income",
+      unlockBtn:"Unlock", wrongPin:"Incorrect code"
     }
   };
 
@@ -832,6 +900,85 @@
       toast(I18N[lang].ghDisconnectedToast);
     });
     if(ghCfg && ghCfg.owner && ghCfg.repo && ghCfg.token) setGhStatus("", I18N[lang].ghSynced);
+  }
+
+  /* ============ PIN lock ============ */
+  const PIN_KEY = "tmc_daily_income_pin_v1";
+
+  async function hashPin(pin){
+    try{
+      if(window.crypto && crypto.subtle){
+        const enc = new TextEncoder().encode(pin + "::daily-income-salt");
+        const buf = await crypto.subtle.digest("SHA-256", enc);
+        return Array.from(new Uint8Array(buf)).map(b=> b.toString(16).padStart(2,"0")).join("");
+      }
+    }catch(e){}
+    // fallback (non-secure context) — simple djb2 hash, still avoids raw plaintext storage
+    let h = 5381;
+    const s = pin + "::daily-income-salt";
+    for(let i=0;i<s.length;i++) h = ((h << 5) + h) + s.charCodeAt(i);
+    return "djb2_" + (h >>> 0).toString(16);
+  }
+  function getPinHash(){ try{ return localStorage.getItem(PIN_KEY); }catch(e){ return null; } }
+  function setPinHash(h){ try{ localStorage.setItem(PIN_KEY, h); }catch(e){} }
+  function clearPinHash(){ try{ localStorage.removeItem(PIN_KEY); }catch(e){} }
+  function isValidPin(v){ return /^[0-9]{4}$/.test(v); }
+
+  function initPinUI(){
+    const modal = document.getElementById("pinModal");
+    document.getElementById("lockBtn").addEventListener("click", ()=>{
+      document.getElementById("pinNewInput").value = "";
+      document.getElementById("pinConfirmInput").value = "";
+      document.getElementById("pinModalError").style.display = "none";
+      document.getElementById("pinRemoveBtn").style.display = getPinHash() ? "block" : "none";
+      modal.classList.add("show");
+    });
+    document.getElementById("pinModalClose").addEventListener("click", ()=> modal.classList.remove("show"));
+    modal.addEventListener("click", (e)=>{ if(e.target === modal) modal.classList.remove("show"); });
+
+    document.getElementById("pinSaveBtn").addEventListener("click", async ()=>{
+      const a = document.getElementById("pinNewInput").value.trim();
+      const b = document.getElementById("pinConfirmInput").value.trim();
+      const errEl = document.getElementById("pinModalError");
+      if(!isValidPin(a)){ errEl.textContent = I18N[lang].pinInvalid; errEl.style.display = "block"; return; }
+      if(a !== b){ errEl.textContent = I18N[lang].pinMismatch; errEl.style.display = "block"; return; }
+      const h = await hashPin(a);
+      setPinHash(h);
+      modal.classList.remove("show");
+      toast(I18N[lang].pinSetToast);
+    });
+    document.getElementById("pinRemoveBtn").addEventListener("click", ()=>{
+      clearPinHash();
+      modal.classList.remove("show");
+      toast(I18N[lang].pinRemovedToast);
+    });
+
+    const unlockBtn = document.getElementById("unlockBtn");
+    const pinInput = document.getElementById("pinInput");
+    async function tryUnlock(){
+      const val = pinInput.value.trim();
+      const errEl = document.getElementById("pinError");
+      if(!isValidPin(val)){ errEl.textContent = I18N[lang].pinInvalid; pinInput.value = ""; return; }
+      const h = await hashPin(val);
+      if(h === getPinHash()){
+        document.getElementById("lockOverlay").classList.remove("show");
+        pinInput.value = "";
+        errEl.textContent = "";
+      } else {
+        errEl.textContent = I18N[lang].wrongPin;
+        pinInput.value = "";
+        pinInput.focus();
+      }
+    }
+    unlockBtn.addEventListener("click", tryUnlock);
+    pinInput.addEventListener("keydown", e=>{ if(e.key === "Enter") tryUnlock(); });
+  }
+
+  function showLockOverlayIfNeeded(){
+    if(getPinHash()){
+      document.getElementById("lockOverlay").classList.add("show");
+      setTimeout(()=> document.getElementById("pinInput").focus(), 200);
+    }
   }
 
   function todayStr(){
@@ -1524,6 +1671,8 @@
     watchTotalbarHeight();
     initGhUI();
     autoPullOnLoad();
+    initPinUI();
+    showLockOverlayIfNeeded();
   }
   init();
 })();
