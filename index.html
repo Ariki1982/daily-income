@@ -3,6 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="دخل اليوم">
+<meta name="theme-color" content="#0E6E6E">
+<meta name="mobile-web-app-capable" content="yes">
 <title>دخل اليوم · Daily Income</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -152,6 +157,7 @@
   .month-total .mt-mid{display:flex; flex-direction:column; align-items:center; gap:1px; flex:1;}
   .month-total .mt-label{font-size:12px; font-weight:700; color:var(--gold);}
   .month-total .mt-val{font-family:var(--font-num); font-size:16px; font-weight:800; color:var(--gold); direction:ltr;}
+  .month-total .mt-avg{font-family:var(--font-num); font-size:10.5px; font-weight:600; color:var(--gold); opacity:.75; direction:ltr;}
   .month-total .mt-arrow{
     border:none; background:transparent; color:var(--gold); font-size:19px; font-weight:800;
     cursor:pointer; width:34px; height:34px; border-radius:8px; flex-shrink:0;
@@ -173,6 +179,14 @@
   }
   .amount-row input::-webkit-outer-spin-button, .amount-row input::-webkit-inner-spin-button{-webkit-appearance:none; margin:0;}
   .amount-row .cur{font-size:14px; color:var(--ink-dim); font-weight:700;}
+  .quick-amounts{display:flex; flex-wrap:wrap; gap:6px; margin-top:8px;}
+  .qa-chip{
+    border:1px solid var(--line); background:var(--paper-2); color:var(--ink-dim);
+    border-radius:999px; padding:6px 13px; font-size:12.5px; font-weight:700;
+    font-family:var(--font-num); cursor:pointer; direction:ltr;
+  }
+  .qa-chip:active{transform:scale(.93);}
+  .qa-chip.hit{background:var(--teal-dim); border-color:var(--teal); color:var(--teal);}
   .method-grid{display:grid; grid-template-columns:repeat(5,1fr); gap:6px; margin-top:10px;}
   .method-btn{
     border:1px solid var(--line); background:var(--paper); border-radius:10px;
@@ -251,10 +265,15 @@
   /* ---------- Toast ---------- */
   .toast{
     position:fixed; top:calc(14px + env(safe-area-inset-top,0px)); left:50%; transform:translateX(-50%) translateY(-140%);
-    background:var(--ink); color:var(--bg); padding:10px 18px; border-radius:999px; font-size:13px; font-weight:600;
+    background:var(--ink); color:var(--bg); padding:10px 10px 10px 18px; border-radius:999px; font-size:13px; font-weight:600;
     z-index:100; transition:transform .25s ease; box-shadow:var(--shadow); white-space:nowrap;
+    display:flex; align-items:center; gap:10px;
   }
   .toast.show{transform:translateX(-50%) translateY(0);}
+  .toast .undo-btn{
+    background:var(--gold); color:#1c1c1c; border:none; border-radius:999px; padding:5px 12px;
+    font-size:12px; font-weight:800; font-family:var(--font-ui); cursor:pointer; flex-shrink:0;
+  }
 
   /* ---------- Print ---------- */
   @media print{
@@ -364,6 +383,7 @@
     <span class="mt-mid">
       <span class="mt-label" id="monthTotalLabel">—</span>
       <span class="mt-val" id="monthTotalVal">0.00</span>
+      <span class="mt-avg" id="monthTotalAvg"></span>
     </span>
     <button class="mt-arrow" id="nextMonth">›</button>
   </div>
@@ -374,6 +394,7 @@
       <span class="cur" data-i18n="currency">ر.س</span>
       <input type="number" inputmode="decimal" id="amountInput" placeholder="0.00" step="0.01" min="0">
     </div>
+    <div class="quick-amounts" id="quickAmounts"></div>
     <div class="method-grid" id="methodGrid"></div>
     <input type="text" class="note-input" id="noteInput" data-i18n-ph="notePh" placeholder="ملاحظة (اسم المريض / الإجراء) — اختياري">
     <button class="add-btn" id="addBtn" data-i18n="addBtn">إضافة إلى السجل</button>
@@ -444,6 +465,39 @@
 (function(){
   "use strict";
 
+  /* ============ home-screen icon ============ */
+  (function generateAppIcon(){
+    try{
+      const size = 180;
+      const canvas = document.createElement("canvas");
+      canvas.width = size; canvas.height = size;
+      const ctx = canvas.getContext("2d");
+      const r = 38;
+      ctx.fillStyle = "#0E6E6E";
+      ctx.beginPath();
+      ctx.moveTo(r, 0);
+      ctx.arcTo(size, 0, size, size, r);
+      ctx.arcTo(size, size, 0, size, r);
+      ctx.arcTo(0, size, 0, 0, r);
+      ctx.arcTo(0, 0, size, 0, r);
+      ctx.closePath();
+      ctx.fill();
+      ctx.font = "104px -apple-system, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("🧾", size/2, size/2 + 8);
+      const dataUrl = canvas.toDataURL("image/png");
+      const link = document.createElement("link");
+      link.rel = "apple-touch-icon";
+      link.href = dataUrl;
+      document.head.appendChild(link);
+      const link2 = document.createElement("link");
+      link2.rel = "icon";
+      link2.href = dataUrl;
+      document.head.appendChild(link2);
+    }catch(e){}
+  })();
+
   /* ============ i18n ============ */
   const I18N = {
     ar: {
@@ -479,7 +533,8 @@
       ghSyncing:"جارِ المزامنة…", ghSynced:"تمت المزامنة", ghSyncFailed:"تعذّرت المزامنة",
       ghNotConfigured:"المزامنة غير مفعّلة", ghMerged:"تم الدمج مع GitHub بنجاح",
       printReportTitle:"تقرير الدخل الشهري", printGrandTotal:"الإجمالي الكلي لكل الفترة", printNoData:"لا توجد أي بيانات مسجلة للطباعة",
-      monthTotalPrefix:"إجمالي"
+      monthTotalPrefix:"إجمالي",
+      undoBtn:"تراجع", avgPerDay:"متوسط اليوم"
     },
     en: {
       appTitle:"Daily Income", appSub:"End-of-shift income log",
@@ -514,7 +569,8 @@
       ghSyncing:"Syncing…", ghSynced:"Synced", ghSyncFailed:"Sync failed",
       ghNotConfigured:"Sync not enabled", ghMerged:"Merged with GitHub successfully",
       printReportTitle:"Monthly Income Report", printGrandTotal:"Grand total for the whole period", printNoData:"No data recorded to print",
-      monthTotalPrefix:"Total for"
+      monthTotalPrefix:"Total for",
+      undoBtn:"Undo", avgPerDay:"Daily average"
     }
   };
 
@@ -888,6 +944,27 @@
     });
   }
 
+  /* ============ quick amount presets ============ */
+  const QUICK_AMOUNTS = [50, 100, 150, 200, 300, 500];
+  function renderQuickAmounts(){
+    const row = document.getElementById("quickAmounts");
+    row.innerHTML = "";
+    QUICK_AMOUNTS.forEach(v=>{
+      const chip = document.createElement("button");
+      chip.type = "button";
+      chip.className = "qa-chip";
+      chip.textContent = v;
+      chip.addEventListener("click", ()=>{
+        const input = document.getElementById("amountInput");
+        input.value = v;
+        document.querySelectorAll(".qa-chip").forEach(c=> c.classList.remove("hit"));
+        chip.classList.add("hit");
+        input.focus();
+      });
+      row.appendChild(chip);
+    });
+  }
+
   /* ============ shift chips ============ */
   document.querySelectorAll(".chip").forEach(chip=>{
     chip.addEventListener("click", ()=>{
@@ -953,6 +1030,25 @@
     clearTimeout(toastTimer);
     toastTimer = setTimeout(()=> el.classList.remove("show"), 2200);
   }
+  function toastWithUndo(msg, onUndo){
+    const el = document.getElementById("toast");
+    el.innerHTML = "";
+    const span = document.createElement("span");
+    span.textContent = msg;
+    const btn = document.createElement("button");
+    btn.className = "undo-btn";
+    btn.textContent = I18N[lang].undoBtn;
+    btn.addEventListener("click", ()=>{
+      onUndo();
+      el.classList.remove("show");
+      clearTimeout(toastTimer);
+    });
+    el.appendChild(span);
+    el.appendChild(btn);
+    el.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=> el.classList.remove("show"), 5000);
+  }
 
   /* ============ entries CRUD ============ */
   function getDayEntries(dateStr){
@@ -976,6 +1072,7 @@
     saveStore();
     document.getElementById("amountInput").value = "";
     document.getElementById("noteInput").value = "";
+    document.querySelectorAll(".qa-chip").forEach(c=> c.classList.remove("hit"));
     renderEntries();
     toast(I18N[lang].addedToast);
     autoSyncPush();
@@ -986,12 +1083,24 @@
   });
 
   function deleteEntry(id){
-    const list = state.entries[currentDate] || [];
-    state.entries[currentDate] = list.filter(e=>e.id!==id);
+    const dateAtDelete = currentDate;
+    const list = state.entries[dateAtDelete] || [];
+    const removed = list.find(e=>e.id===id);
+    state.entries[dateAtDelete] = list.filter(e=>e.id!==id);
     saveStore();
     renderEntries();
-    toast(I18N[lang].deletedToast);
     autoSyncPush();
+    if(removed){
+      toastWithUndo(I18N[lang].deletedToast, ()=>{
+        if(!state.entries[dateAtDelete]) state.entries[dateAtDelete] = [];
+        state.entries[dateAtDelete].push(removed);
+        saveStore();
+        if(currentDate === dateAtDelete) renderEntries();
+        autoSyncPush();
+      });
+    } else {
+      toast(I18N[lang].deletedToast);
+    }
   }
 
   function renderEntries(){
@@ -1031,9 +1140,12 @@
   function renderMonthTotal(){
     const monthKey = currentDate.slice(0,7); // YYYY-MM
     let total = 0;
+    let activeDays = 0;
     Object.keys(state.entries).forEach(date=>{
       if(date.slice(0,7) === monthKey){
-        (state.entries[date] || []).forEach(en=> total += en.amount);
+        const dayEntries = state.entries[date] || [];
+        if(dayEntries.length > 0) activeDays++;
+        dayEntries.forEach(en=> total += en.amount);
       }
     });
     const locale = lang==="ar" ? "ar-SA-u-ca-gregory" : "en-US-u-ca-gregory";
@@ -1041,6 +1153,8 @@
     const monthLabel = new Intl.DateTimeFormat(locale, {month:"long", year:"numeric"}).format(new Date(y, m-1, 1));
     document.getElementById("monthTotalLabel").textContent = `${I18N[lang].monthTotalPrefix} ${monthLabel}`;
     document.getElementById("monthTotalVal").textContent = total.toFixed(2) + " " + I18N[lang].currency;
+    const avgEl = document.getElementById("monthTotalAvg");
+    avgEl.textContent = activeDays > 0 ? `${I18N[lang].avgPerDay}: ${(total/activeDays).toFixed(2)} ${I18N[lang].currency}` : "";
   }
 
   function renderTotals(list){
@@ -1256,6 +1370,7 @@
     applyI18n();
     renderShiftChips();
     renderMethods();
+    renderQuickAmounts();
     renderDayNav();
     renderEntries();
     tickClock();
