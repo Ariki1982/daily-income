@@ -427,6 +427,7 @@
       <span class="mt-label" id="monthTotalLabel">—</span>
       <span class="mt-val" id="monthTotalVal">0.00</span>
       <span class="mt-avg" id="monthTotalAvg"></span>
+      <span class="mt-avg" id="weekTotalLine"></span>
     </span>
     <button class="mt-arrow" id="nextMonth">›</button>
   </div>
@@ -449,7 +450,8 @@
     </div>
     <div class="quick-amounts" id="quickAmounts"></div>
     <div class="method-grid" id="methodGrid"></div>
-    <input type="text" class="note-input" id="noteInput" data-i18n-ph="notePh" placeholder="ملاحظة (اسم المريض / الإجراء) — اختياري">
+    <input type="text" class="note-input" id="noteInput" list="noteSuggestions" data-i18n-ph="notePh" placeholder="ملاحظة (اسم المريض / الإجراء) — اختياري">
+    <datalist id="noteSuggestions"></datalist>
     <button class="add-btn" id="addBtn" data-i18n="addBtn">إضافة إلى السجل</button>
   </div>
 
@@ -609,6 +611,7 @@
       emptyList:"لا توجد حركات مسجلة لهذا اليوم بعد",
       addedToast:"تمت إضافة الحركة", deletedToast:"تم حذف الحركة",
       needAmount:"أدخل مبلغاً صحيحاً أولاً",
+      confirmLargeAmount:"المبلغ {amount} ر.س كبير نسبياً — متأكد إنه صحيح؟",
       confirmClear:"سيتم حذف كل حركات هذا اليوم. متابعة؟",
       clearedToast:"تم مسح حركات اليوم",
       exportedJson:"تم تصدير ملف JSON", exportedXlsx:"تم تصدير ملف Excel",
@@ -628,8 +631,9 @@
       ghSyncing:"جارِ المزامنة…", ghSynced:"تمت المزامنة", ghSyncFailed:"تعذّرت المزامنة",
       ghNotConfigured:"المزامنة غير مفعّلة", ghMerged:"تم الدمج مع GitHub بنجاح",
       printReportTitle:"تقرير الدخل الشهري", printGrandTotal:"الإجمالي الكلي لكل الفترة", printNoData:"لا توجد أي بيانات مسجلة للطباعة",
+      printOpeningSafari:"يفتح تقرير الطباعة في Safari لأن الطباعة غير مدعومة داخل تطبيق الشاشة الرئيسية",
       monthTotalPrefix:"إجمالي",
-      undoBtn:"تراجع", avgPerDay:"متوسط اليوم", trendTitle:"الاتجاه الشهري (آخر 6 أشهر)",
+      undoBtn:"تراجع", avgPerDay:"متوسط اليوم", trendTitle:"الاتجاه الشهري (آخر 6 أشهر)", last7days:"آخر 7 أيام",
       editingBanner:"تعديل حركة موجودة", cancelEdit:"إلغاء", saveEdit:"حفظ التعديل", savedEditToast:"تم حفظ التعديل",
       lockTitle:"قفل بكود PIN", lockHint:"كود مكوّن من 4 أرقام يُطلب عند فتح الأداة. يُحفظ مشفّراً في هذا الجهاز فقط.",
       pinNew:"الكود الجديد (4 أرقام)", pinConfirm:"تأكيد الكود", pinSave:"حفظ", pinRemove:"إزالة القفل",
@@ -653,6 +657,7 @@
       emptyList:"No entries logged for this day yet",
       addedToast:"Entry added", deletedToast:"Entry deleted",
       needAmount:"Enter a valid amount first",
+      confirmLargeAmount:"{amount} SAR is a fairly large amount — is that correct?",
       confirmClear:"This will delete all of this day's entries. Continue?",
       clearedToast:"Day cleared",
       exportedJson:"JSON file exported", exportedXlsx:"Excel file exported",
@@ -672,8 +677,9 @@
       ghSyncing:"Syncing…", ghSynced:"Synced", ghSyncFailed:"Sync failed",
       ghNotConfigured:"Sync not enabled", ghMerged:"Merged with GitHub successfully",
       printReportTitle:"Monthly Income Report", printGrandTotal:"Grand total for the whole period", printNoData:"No data recorded to print",
+      printOpeningSafari:"Opening the print report in Safari — printing isn't supported inside the home-screen app",
       monthTotalPrefix:"Total for",
-      undoBtn:"Undo", avgPerDay:"Daily average", trendTitle:"Monthly trend (last 6 months)",
+      undoBtn:"Undo", avgPerDay:"Daily average", trendTitle:"Monthly trend (last 6 months)", last7days:"Last 7 days",
       editingBanner:"Editing existing entry", cancelEdit:"Cancel", saveEdit:"Save changes", savedEditToast:"Changes saved",
       lockTitle:"PIN lock", lockHint:"A 4-digit code required to open the tool. Stored hashed on this device only.",
       pinNew:"New code (4 digits)", pinConfirm:"Confirm code", pinSave:"Save", pinRemove:"Remove lock",
@@ -847,6 +853,7 @@
       state.entries = mergedEntries;
       saveStore();
       renderDayNav(); renderEntries();
+      refreshNoteSuggestions();
       const payload = {entries: mergedEntries, settings: {}};
       await ghPutRemote(remote.sha, payload);
       setGhStatus("ok", I18N[lang].ghSynced);
@@ -866,6 +873,7 @@
         state.entries = mergeEntries(remote.data, state);
         saveStore();
         renderDayNav(); renderEntries();
+        refreshNoteSuggestions();
       }
       setGhStatus("ok", I18N[lang].ghSynced);
     }catch(e){
@@ -1156,6 +1164,20 @@
     });
   }
 
+  function refreshNoteSuggestions(){
+    const seen = new Set();
+    const notes = [];
+    allEntriesFlat()
+      .sort((a,b)=> (b.date+b.time).localeCompare(a.date+a.time))
+      .forEach(r=>{
+        const n = (r.note || "").trim();
+        const key = n.toLowerCase();
+        if(n && !seen.has(key)){ seen.add(key); notes.push(n); }
+      });
+    const dl = document.getElementById("noteSuggestions");
+    dl.innerHTML = notes.slice(0, 20).map(n=> `<option value="${escapeHtml(n)}"></option>`).join("");
+  }
+
   /* ============ shift chips ============ */
   document.querySelectorAll(".chip").forEach(chip=>{
     chip.addEventListener("click", ()=>{
@@ -1249,6 +1271,10 @@
   function addEntry(){
     const amt = parseFloat(document.getElementById("amountInput").value);
     if(!amt || amt <= 0){ toast(I18N[lang].needAmount); return; }
+    if(amt >= 5000){
+      const ok = confirm(I18N[lang].confirmLargeAmount.replace("{amount}", amt.toFixed(2)));
+      if(!ok) return;
+    }
     const note = document.getElementById("noteInput").value.trim();
 
     if(editingId){
@@ -1263,6 +1289,7 @@
       saveStore();
       cancelEdit();
       renderEntries();
+      refreshNoteSuggestions();
       toast(I18N[lang].savedEditToast);
       autoSyncPush();
       return;
@@ -1284,6 +1311,7 @@
     document.getElementById("noteInput").value = "";
     document.querySelectorAll(".qa-chip").forEach(c=> c.classList.remove("hit"));
     renderEntries();
+    refreshNoteSuggestions();
     toast(I18N[lang].addedToast);
     autoSyncPush();
   }
@@ -1400,6 +1428,12 @@
     document.getElementById("monthTotalVal").textContent = total.toFixed(2) + " " + I18N[lang].currency;
     const avgEl = document.getElementById("monthTotalAvg");
     avgEl.textContent = activeDays > 0 ? `${I18N[lang].avgPerDay}: ${(total/activeDays).toFixed(2)} ${I18N[lang].currency}` : "";
+    let weekTotal = 0;
+    for(let i=0;i<7;i++){
+      const d = shiftDate(currentDate, -i);
+      (state.entries[d] || []).forEach(en=> weekTotal += en.amount);
+    }
+    document.getElementById("weekTotalLine").textContent = `${I18N[lang].last7days}: ${weekTotal.toFixed(2)} ${I18N[lang].currency}`;
     renderTrend();
     renderMonthBreakdown();
   }
@@ -1619,6 +1653,7 @@
         });
         saveStore();
         renderDayNav(); renderEntries();
+        refreshNoteSuggestions();
         toast(I18N[lang].importedOk);
       }catch(err){
         toast(I18N[lang].importedErr);
@@ -1627,6 +1662,41 @@
     };
     reader.readAsText(file);
   });
+
+  function isIOSStandalone(){
+    return window.navigator.standalone === true;
+  }
+
+  const PRINT_CSS = `
+    @font-face{}
+    body{font-family:'Cairo',system-ui,sans-serif; margin:0; padding:14px;}
+    .pv-month{padding:14px 6px; page-break-after:always;}
+    .pv-month:last-child{page-break-after:auto;}
+    .pv-title{font-size:18px; font-weight:800; margin:0 0 2px; color:#111;}
+    .pv-sub{font-size:11.5px; color:#555; margin:0 0 12px;}
+    .pv-table{width:100%; border-collapse:collapse; font-size:11.5px;}
+    .pv-table th, .pv-table td{border:1px solid #999; padding:5px 7px; text-align:start;}
+    .pv-table th{background:#eee; font-weight:700;}
+    .pv-table td.num, .pv-table th.num{direction:ltr; text-align:end;}
+    .pv-total-row td{font-weight:800; background:#f3f3f3; border-top:2px solid #333;}
+    .pv-grand{margin-top:16px; font-size:13.5px; font-weight:800; text-align:end; direction:ltr;}
+  `;
+
+  function openPrintInRealSafari(){
+    const content = document.getElementById("printView").innerHTML;
+    const dirAttr = lang==="ar" ? 'dir="rtl" lang="ar"' : 'dir="ltr" lang="en"';
+    const html = `<!doctype html><html ${dirAttr}><head><meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <title>${I18N[lang].printReportTitle}</title>
+      <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;800&display=swap" rel="stylesheet">
+      <style>${PRINT_CSS}</style></head>
+      <body>${content}
+      <script>window.addEventListener("load", function(){ setTimeout(function(){ window.print(); }, 350); });<\/script>
+      </body></html>`;
+    const blob = new Blob([html], {type:"text/html"});
+    const url = URL.createObjectURL(blob);
+    window.open(url, "_blank");
+  }
 
   function buildPrintView(){
     const dict = I18N[lang];
@@ -1687,7 +1757,12 @@
   }
   document.getElementById("printBtn").addEventListener("click", ()=>{
     buildPrintView();
-    window.print();
+    if(isIOSStandalone()){
+      toast(I18N[lang].printOpeningSafari);
+      openPrintInRealSafari();
+    } else {
+      window.print();
+    }
   });
 
   /* ============ keep list clear of the sticky total bar ============ */
@@ -1714,6 +1789,7 @@
     renderShiftChips();
     renderMethods();
     renderQuickAmounts();
+    refreshNoteSuggestions();
     renderDayNav();
     renderEntries();
     tickClock();
