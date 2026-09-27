@@ -125,9 +125,9 @@
   /* ---------- Shift chips ---------- */
   .shift-row{display:flex; gap:8px; margin:12px 0 4px; flex-wrap:wrap;}
   .chip{
-    flex:1 1 calc(50% - 4px); min-width:110px; border:1px solid var(--line); background:var(--paper);
-    border-radius:999px; padding:9px 10px; text-align:center;
-    font-size:13.5px; font-weight:600; color:var(--ink-dim); cursor:pointer;
+    flex:1; min-width:0; border:1px solid var(--line); background:var(--paper);
+    border-radius:999px; padding:9px 8px; text-align:center;
+    font-size:13px; font-weight:600; color:var(--ink-dim); cursor:pointer;
     transition:all .15s;
   }
   .chip.active{background:var(--teal-dim); border-color:var(--teal); color:var(--teal);}
@@ -406,7 +406,6 @@
       <div class="chip" data-shift="morning" data-i18n="shiftMorning">صباحي</div>
       <div class="chip" data-shift="evening" data-i18n="shiftEvening">مسائي</div>
       <div class="chip" data-shift="callout" data-i18n="shiftCallout">استدعاء</div>
-      <div class="chip" data-shift="offshift" data-i18n="shiftOffshift">خارج دوام</div>
     </div>
     <div class="gh-status" id="ghStatus" style="display:none;">
       <span class="gh-dot"></span><span id="ghStatusText"></span>
@@ -600,7 +599,7 @@
   const I18N = {
     ar: {
       appTitle:"دخل اليوم", appSub:"تسجيل دخل نهاية الدوام",
-      shiftMorning:"صباحي", shiftEvening:"مسائي", shiftCallout:"استدعاء", shiftOffshift:"خارج دوام",
+      shiftMorning:"صباحي", shiftEvening:"مسائي", shiftCallout:"استدعاء",
       tapToPick:"اضغط لاختيار تاريخ آخر", today:"اليوم", yesterday:"أمس",
       newEntry:"إضافة دخل", currency:"ر.س",
       notePh:"ملاحظة (اسم المريض / الإجراء) — اختياري",
@@ -646,7 +645,7 @@
     },
     en: {
       appTitle:"Daily Income", appSub:"End-of-shift income log",
-      shiftMorning:"Morning", shiftEvening:"Evening", shiftCallout:"On-call", shiftOffshift:"Off-shift",
+      shiftMorning:"Morning", shiftEvening:"Evening", shiftCallout:"On-call",
       tapToPick:"Tap to pick another date", today:"Today", yesterday:"Yesterday",
       newEntry:"Add Income", currency:"SAR",
       notePh:"Note (patient / procedure) — optional",
@@ -703,8 +702,7 @@
   const SHIFTS = [
     {id:"morning", key:"shiftMorning"},
     {id:"evening", key:"shiftEvening"},
-    {id:"callout", key:"shiftCallout"},
-    {id:"offshift", key:"shiftOffshift"}
+    {id:"callout", key:"shiftCallout"}
   ];
   function shiftLabel(shiftId){
     const s = SHIFTS.find(x=>x.id===shiftId);
