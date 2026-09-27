@@ -123,9 +123,9 @@
   .dates .hijri{font-size:13px; color:var(--ink-dim);}
 
   /* ---------- Shift chips ---------- */
-  .shift-row{display:flex; gap:8px; margin:12px 0 4px;}
+  .shift-row{display:flex; gap:8px; margin:12px 0 4px; flex-wrap:wrap;}
   .chip{
-    flex:1; border:1px solid var(--line); background:var(--paper);
+    flex:1 1 calc(50% - 4px); min-width:110px; border:1px solid var(--line); background:var(--paper);
     border-radius:999px; padding:9px 10px; text-align:center;
     font-size:13.5px; font-weight:600; color:var(--ink-dim); cursor:pointer;
     transition:all .15s;
@@ -405,6 +405,8 @@
     <div class="shift-row">
       <div class="chip" data-shift="morning" data-i18n="shiftMorning">صباحي</div>
       <div class="chip" data-shift="evening" data-i18n="shiftEvening">مسائي</div>
+      <div class="chip" data-shift="callout" data-i18n="shiftCallout">استدعاء</div>
+      <div class="chip" data-shift="offshift" data-i18n="shiftOffshift">خارج دوام</div>
     </div>
     <div class="gh-status" id="ghStatus" style="display:none;">
       <span class="gh-dot"></span><span id="ghStatusText"></span>
@@ -598,7 +600,7 @@
   const I18N = {
     ar: {
       appTitle:"دخل اليوم", appSub:"تسجيل دخل نهاية الدوام",
-      shiftMorning:"صباحي", shiftEvening:"مسائي",
+      shiftMorning:"صباحي", shiftEvening:"مسائي", shiftCallout:"استدعاء", shiftOffshift:"خارج دوام",
       tapToPick:"اضغط لاختيار تاريخ آخر", today:"اليوم", yesterday:"أمس",
       newEntry:"إضافة دخل", currency:"ر.س",
       notePh:"ملاحظة (اسم المريض / الإجراء) — اختياري",
@@ -644,7 +646,7 @@
     },
     en: {
       appTitle:"Daily Income", appSub:"End-of-shift income log",
-      shiftMorning:"Morning", shiftEvening:"Evening",
+      shiftMorning:"Morning", shiftEvening:"Evening", shiftCallout:"On-call", shiftOffshift:"Off-shift",
       tapToPick:"Tap to pick another date", today:"Today", yesterday:"Yesterday",
       newEntry:"Add Income", currency:"SAR",
       notePh:"Note (patient / procedure) — optional",
@@ -697,6 +699,17 @@
     {id:"insurance", key:"mInsurance", color:"var(--insurance)"},
     {id:"other", key:"mOther", color:"var(--other)"}
   ];
+
+  const SHIFTS = [
+    {id:"morning", key:"shiftMorning"},
+    {id:"evening", key:"shiftEvening"},
+    {id:"callout", key:"shiftCallout"},
+    {id:"offshift", key:"shiftOffshift"}
+  ];
+  function shiftLabel(shiftId){
+    const s = SHIFTS.find(x=>x.id===shiftId);
+    return s ? I18N[lang][s.key] : "";
+  }
 
   const STORE_KEY = "tmc_daily_income_v1";
 
@@ -1389,7 +1402,7 @@
           <span class="idx">${idx+1}</span>
           <span class="dot" style="background:${mDef.color}"></span>
           <span class="info">
-            <div class="m">${dict[mDef.key]}${entry.shift ? " · " + dict[entry.shift==="morning"?"shiftMorning":"shiftEvening"] : ""}</div>
+            <div class="m">${dict[mDef.key]}${entry.shift ? " · " + shiftLabel(entry.shift) : ""}</div>
             ${entry.note ? `<div class="n">${escapeHtml(entry.note)}</div>` : ""}
           </span>
           <span class="time">${entry.time}</span>
@@ -1615,7 +1628,7 @@
       grand += r.amount;
       data.push([
         r.date, r.time,
-        r.shift ? dict[r.shift==="morning"?"shiftMorning":"shiftEvening"] : "",
+        r.shift ? shiftLabel(r.shift) : "",
         dict[(METHODS.find(m=>m.id===r.method)||METHODS[4]).key],
         r.note || "",
         r.amount
@@ -1725,11 +1738,11 @@
       items.forEach(r=>{
         monthTotal += r.amount;
         const mDef = METHODS.find(x=>x.id===r.method) || METHODS[4];
-        const shiftLabel = r.shift ? dict[r.shift==="morning"?"shiftMorning":"shiftEvening"] : "";
+        const shiftLbl = shiftLabel(r.shift);
         bodyRows += `<tr>
           <td>${r.date}</td>
           <td class="num">${r.time}</td>
-          <td>${shiftLabel}</td>
+          <td>${shiftLbl}</td>
           <td>${dict[mDef.key]}</td>
           <td>${escapeHtml(r.note || "")}</td>
           <td class="num">${r.amount.toFixed(2)}</td>
