@@ -324,7 +324,7 @@
   .toast{
     position:fixed; top:calc(14px + env(safe-area-inset-top,0px)); left:50%; transform:translateX(-50%) translateY(-140%);
     background:var(--ink); color:var(--bg); padding:10px 10px 10px 18px; border-radius:999px; font-size:13px; font-weight:600;
-    z-index:100; transition:transform .25s ease; box-shadow:var(--shadow); white-space:nowrap;
+    z-index:100; transition:transform .25s ease; box-shadow:var(--shadow); white-space:normal; width:max-content; max-width:min(92vw,480px); line-height:1.45; text-align:center;
     display:flex; align-items:center; gap:10px;
   }
   .toast.show{transform:translateX(-50%) translateY(0);}
@@ -394,6 +394,18 @@
   .modal-actions .cancel{background:var(--paper-2); color:var(--ink-dim); border:1px solid var(--line); flex:0 0 auto; padding-left:16px; padding-right:16px;}
   .modal-close-x{position:absolute; top:14px; inset-inline-end:14px; background:none; border:none; font-size:18px; color:var(--ink-dim); cursor:pointer;}
   .modal-sheet{position:relative;}
+  .field select{
+    width:100%; margin-top:8px; border:1px solid var(--line); border-radius:9px; padding:10px 12px;
+    font-family:var(--font-ui); font-size:13.5px; background:var(--paper-2); color:var(--ink); direction:ltr;
+  }
+  .detect-btn{
+    width:100%; margin-top:8px; border:1px dashed var(--teal); background:var(--teal-dim); color:var(--teal);
+    border-radius:9px; padding:10px; font-family:var(--font-ui); font-size:13px; font-weight:700; cursor:pointer;
+  }
+  .gh-result{margin:10px 0 0; font-size:12.5px; font-weight:700; line-height:1.6; color:var(--ink-dim);}
+  .gh-result.ok{color:var(--cash);}
+  .gh-result.err{color:var(--danger);}
+  .gh-result.busy{color:var(--gold);}
 </style>
 </head>
 <body>
@@ -559,6 +571,8 @@
     <div class="field">
       <label data-i18n="ghPath">مسار ملف البيانات</label>
       <input type="text" id="ghPath" placeholder="data/daily-income.json" autocapitalize="off" autocorrect="off">
+      <select id="ghPathSelect" style="display:none;"></select>
+      <button type="button" class="detect-btn" id="ghDetectBtn" data-i18n="ghDetect">🔍 اكتشف ملف JSON الموجود في المشروع</button>
     </div>
     <div class="field">
       <label data-i18n="ghBranch">الفرع (Branch)</label>
@@ -568,6 +582,7 @@
       <label data-i18n="ghToken">Personal Access Token</label>
       <input type="password" id="ghToken" placeholder="github_pat_..." autocapitalize="off" autocorrect="off">
     </div>
+    <p class="hint gh-result" id="ghResult" style="display:none;"></p>
     <div class="modal-actions">
       <button class="cancel" id="ghDisconnect" data-i18n="ghDisconnect">فصل</button>
       <button class="sync" id="ghSyncNow" data-i18n="ghSyncNow">مزامنة الآن</button>
@@ -649,6 +664,12 @@
       ghSavedToast:"تم حفظ إعدادات المزامنة", ghDisconnectedToast:"تم فصل المزامنة",
       ghSyncing:"جارِ المزامنة…", ghSynced:"تمت المزامنة", ghSyncFailed:"تعذّرت المزامنة",
       ghNotConfigured:"المزامنة غير مفعّلة", ghMerged:"تم الدمج مع GitHub بنجاح",
+      ghDetect:"🔍 اكتشف ملف JSON الموجود في المشروع", ghChecking:"جارِ التحقق من الاتصال…",
+      ghFound:"وُجد {n} ملف JSON — اختر الملف المناسب من القائمة", ghNoneFound:"ما لقيت أي ملف JSON في المستودع — سيُنشأ ملف جديد عند أول مزامنة",
+      ghUsingFile:"تم اختيار الملف الموجود: {f}", ghConnected:"✓ متصل: {repo} · الملف: {path}",
+      ghErr401:"التوكن غير صحيح أو منتهي — أنشئ توكن جديد", ghErr403:"التوكن لا يملك صلاحية الكتابة — فعّل Contents: Read and write",
+      ghErr404:"المستودع أو الفرع غير موجود، أو التوكن لا يشمل هذا المستودع", ghErrConflict:"تعارض أثناء الحفظ — أعد المزامنة",
+      ghErrNetwork:"تعذّر الاتصال بـ GitHub — تحقق من الإنترنت", ghErrParse:"ملف JSON في GitHub غير صالح — لم يتم تعديله",
       printReportTitle:"تقرير الدخل الشهري", printGrandTotal:"الإجمالي الكلي لكل الفترة", printNoData:"لا توجد أي بيانات مسجلة للطباعة",
       printOpeningSafari:"يفتح تقرير الطباعة في Safari لأن الطباعة غير مدعومة داخل تطبيق الشاشة الرئيسية",
       monthTotalPrefix:"إجمالي",
@@ -695,6 +716,12 @@
       ghSavedToast:"Sync settings saved", ghDisconnectedToast:"Sync disconnected",
       ghSyncing:"Syncing…", ghSynced:"Synced", ghSyncFailed:"Sync failed",
       ghNotConfigured:"Sync not enabled", ghMerged:"Merged with GitHub successfully",
+      ghDetect:"🔍 Detect the JSON file in the project", ghChecking:"Checking connection…",
+      ghFound:"Found {n} JSON file(s) — pick the right one from the list", ghNoneFound:"No JSON file found in the repo — a new one will be created on first sync",
+      ghUsingFile:"Using the existing file: {f}", ghConnected:"✓ Connected: {repo} · file: {path}",
+      ghErr401:"Token is invalid or expired — create a new one", ghErr403:"Token lacks write access — enable Contents: Read and write",
+      ghErr404:"Repository or branch not found, or the token does not cover this repo", ghErrConflict:"Save conflict — sync again",
+      ghErrNetwork:"Could not reach GitHub — check your connection", ghErrParse:"The JSON file on GitHub is not valid — left untouched",
       printReportTitle:"Monthly Income Report", printGrandTotal:"Grand total for the whole period", printNoData:"No data recorded to print",
       printOpeningSafari:"Opening the print report in Safari — printing isn't supported inside the home-screen app",
       monthTotalPrefix:"Total for",
@@ -747,11 +774,12 @@
         if(parsed && typeof parsed === "object"){
           parsed.entries = parsed.entries || {};
           parsed.settings = parsed.settings || {};
+          parsed.deleted = parsed.deleted || {};
           return parsed;
         }
       }
     }catch(e){}
-    return {entries:{}, settings:{}};
+    return {entries:{}, settings:{}, deleted:{}};
   }
   function saveStore(){
     try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }catch(e){}
@@ -759,8 +787,12 @@
 
   /* ============ GitHub sync ============ */
   const GH_KEY = "tmc_daily_income_gh_sync_v1";
+  const DEFAULT_GH_PATH = "data/daily-income.json";
   let ghCfg = loadGhCfg();
   let ghSyncTimer = null;
+  let ghSyncing = false;
+  let ghSyncAgain = false;
+  let ghLastError = "";
 
   function loadGhCfg(){
     try{
@@ -777,12 +809,14 @@
     ghCfg = null;
     try{ localStorage.removeItem(GH_KEY); }catch(e){}
   }
-  function ghApiUrl(){
-    return `https://api.github.com/repos/${ghCfg.owner}/${ghCfg.repo}/contents/${ghCfg.path}`;
-  }
-  function ghHeaders(){
+  function ghConfigured(){ return !!(ghCfg && ghCfg.owner && ghCfg.repo && ghCfg.token); }
+  function ghEncodePath(p){ return String(p).split("/").map(encodeURIComponent).join("/"); }
+  function ghApiBase(c){ c = c || ghCfg; return "https://api.github.com/repos/" + c.owner + "/" + c.repo; }
+  function ghApiUrl(c){ c = c || ghCfg; return ghApiBase(c) + "/contents/" + ghEncodePath(c.path); }
+  function ghHeaders(c){
+    c = c || ghCfg;
     return {
-      "Authorization": "Bearer " + ghCfg.token,
+      "Authorization": "Bearer " + c.token,
       "Accept": "application/vnd.github+json",
       "Content-Type": "application/json"
     };
@@ -791,7 +825,23 @@
     return btoa(unescape(encodeURIComponent(str)));
   }
   function b64DecodeUtf8(b64){
-    return decodeURIComponent(escape(atob(b64.replace(/\n/g,""))));
+    return decodeURIComponent(escape(atob(String(b64).replace(/\n/g,""))));
+  }
+  function ghErr(op, status, extra){
+    const e = new Error(op + " " + status + (extra ? " " + extra : ""));
+    e.status = status;
+    return e;
+  }
+  function friendlyGhError(e){
+    const d = I18N[lang];
+    const s = e && e.status;
+    if(s === 401) return d.ghErr401;
+    if(s === 403) return d.ghErr403;
+    if(s === 404) return d.ghErr404;
+    if(s === 409 || s === 422) return d.ghErrConflict;
+    if(s === 0) return d.ghErrParse;
+    if(e && e.name === "TypeError") return d.ghErrNetwork;
+    return (e && e.message) ? e.message : d.ghSyncFailed;
   }
   function setGhStatus(kind, text){
     const el = document.getElementById("ghStatus");
@@ -801,153 +851,320 @@
     el.className = "gh-status" + (kind ? " " + kind : "");
     txt.textContent = text;
   }
+  function setGhResult(kind, text){
+    const el = document.getElementById("ghResult");
+    if(!el) return;
+    if(!text){ el.style.display = "none"; return; }
+    el.style.display = "block";
+    el.className = "hint gh-result " + (kind || "");
+    el.textContent = text;
+  }
 
-  async function ghGetRemote(){
-    const res = await fetch(ghApiUrl() + `?ref=${encodeURIComponent(ghCfg.branch || "main")}&_=${Date.now()}`, {
-      headers: ghHeaders()
+  async function ghRepoInfo(c){
+    const res = await fetch(ghApiBase(c), { headers: ghHeaders(c), cache: "no-store" });
+    if(!res.ok) throw ghErr("REPO", res.status);
+    return res.json();
+  }
+
+  async function ghListDir(c, dir){
+    const url = ghApiBase(c) + "/contents" + (dir ? "/" + ghEncodePath(dir) : "") + "?ref=" + encodeURIComponent(c.branch || "main");
+    const res = await fetch(url, { headers: ghHeaders(c), cache: "no-store" });
+    if(res.status === 404) return [];
+    if(!res.ok) throw ghErr("LIST", res.status);
+    const arr = await res.json();
+    return Array.isArray(arr) ? arr.filter(f=> f.type === "file" && /\.json$/i.test(f.name)).map(f=> f.path) : [];
+  }
+  function pickBestJson(paths){
+    const skip = /(^|\/)(package(-lock)?|manifest|tsconfig|composer)\.json$/i;
+    const list = paths.filter(p=> !skip.test(p));
+    const score = p => (/daily|income|دخل/i.test(p) ? 2 : 0) + (/data/i.test(p) ? 1 : 0);
+    list.sort((a,b)=> score(b) - score(a));
+    return list[0] || null;
+  }
+
+  async function ghGetRemote(c){
+    c = c || ghCfg;
+    const res = await fetch(ghApiUrl(c) + "?ref=" + encodeURIComponent(c.branch || "main") + "&_=" + Date.now(), {
+      headers: ghHeaders(c), cache: "no-store"
     });
     if(res.status === 404) return {exists:false, sha:null, data:null};
-    if(!res.ok) throw new Error("GET " + res.status);
+    if(!res.ok) throw ghErr("GET", res.status);
     const json = await res.json();
-    const content = b64DecodeUtf8(json.content || "");
+    let content = "";
+    if(json.content){
+      content = b64DecodeUtf8(json.content);
+    } else if(json.git_url){
+      const br = await fetch(json.git_url, { headers: ghHeaders(c), cache: "no-store" });
+      if(br.ok){ const bj = await br.json(); content = b64DecodeUtf8(bj.content || ""); }
+    }
     let data = null;
-    try{ data = JSON.parse(content); }catch(e){ data = null; }
+    if(content.trim()){
+      try{ data = JSON.parse(content); }
+      catch(e){ throw ghErr("PARSE", 0); }   // never overwrite a file we cannot read
+    }
     return {exists:true, sha:json.sha, data};
   }
 
-  async function ghPutRemote(sha, dataObj){
+  async function ghPutRemote(sha, dataObj, c){
+    c = c || ghCfg;
     const body = {
       message: "Daily income update — " + new Date().toISOString(),
       content: b64EncodeUtf8(JSON.stringify(dataObj, null, 2)),
-      branch: ghCfg.branch || "main"
+      branch: c.branch || "main"
     };
     if(sha) body.sha = sha;
-    const res = await fetch(ghApiUrl(), {
+    const res = await fetch(ghApiUrl(c), {
       method: "PUT",
-      headers: ghHeaders(),
+      headers: ghHeaders(c),
       body: JSON.stringify(body)
     });
     if(!res.ok){
       const t = await res.text().catch(()=> "");
-      throw new Error("PUT " + res.status + " " + t.slice(0,150));
+      throw ghErr("PUT", res.status, t.slice(0,120));
     }
     return res.json();
   }
 
-  function mergeEntries(a, b){
-    const merged = {};
-    [a, b].forEach(store=>{
-      if(!store || !store.entries) return;
+  /* ---- merge logic: per-entry timestamps + tombstones so edits and deletes really sync ---- */
+  function entryTs(en){ return (en && typeof en.ts === "number") ? en.ts : 0; }
+  function normStore(s){ return { entries: (s && s.entries) || {}, deleted: (s && s.deleted) || {} }; }
+
+  // a = remote, b = local. On equal timestamps the local copy wins.
+  function mergeStores(a, b){
+    const A = normStore(a), B = normStore(b);
+    const best = {};
+    function consider(store, isLocal){
       Object.keys(store.entries).forEach(date=>{
-        if(!merged[date]) merged[date] = [];
-        const existingIds = new Set(merged[date].map(x=>x.id));
         (store.entries[date] || []).forEach(en=>{
-          if(!existingIds.has(en.id)){ merged[date].push(en); existingIds.add(en.id); }
+          if(!en || !en.id) return;
+          const cur = best[en.id];
+          if(!cur || entryTs(en) > entryTs(cur.en) || (isLocal && entryTs(en) === entryTs(cur.en))){
+            best[en.id] = {date, en};
+          }
         });
       });
+    }
+    consider(A, false);
+    consider(B, true);
+    const deleted = {};
+    [A.deleted, B.deleted].forEach(dm=> Object.keys(dm).forEach(id=>{
+      deleted[id] = Math.max(deleted[id] || 0, dm[id] || 0);
+    }));
+    const cutoff = Date.now() - 365 * 24 * 3600 * 1000;
+    Object.keys(deleted).forEach(id=>{ if(deleted[id] < cutoff) delete deleted[id]; });
+    const entries = {};
+    Object.keys(best).forEach(id=>{
+      const item = best[id];
+      if(deleted[id] && deleted[id] >= entryTs(item.en)) return;   // deleted after its last edit
+      (entries[item.date] = entries[item.date] || []).push(item.en);
     });
-    return merged;
+    return {entries, deleted};
   }
 
-  // Auto push after local changes — fire and forget, never blocks the UI.
-  function autoSyncPush(){
-    if(!ghCfg || !ghCfg.owner || !ghCfg.repo || !ghCfg.token) return;
-    clearTimeout(ghSyncTimer);
-    ghSyncTimer = setTimeout(async ()=>{
-      setGhStatus("busy", I18N[lang].ghSyncing);
-      try{
-        const remote = await ghGetRemote();
-        const mergedEntries = remote.exists ? mergeEntries(remote.data, state) : state.entries;
-        const payload = {entries: mergedEntries, settings: {}};
-        state.entries = mergedEntries;
+  function storeSig(s){
+    const n = normStore(s);
+    const dates = Object.keys(n.entries).filter(d=> (n.entries[d] || []).length).sort();
+    const e = dates.map(d=> [d, n.entries[d].slice()
+      .sort((x,y)=> String(x.id).localeCompare(String(y.id)))
+      .map(en=> [en.id, entryTs(en), en.time, en.amount, en.method, en.shift || "", en.note || ""])]);
+    const del = Object.keys(n.deleted).sort().map(id=> [id, n.deleted[id]]);
+    return JSON.stringify([e, del]);
+  }
+
+  function ghPayload(){
+    return {
+      app: "daily-income", version: 2, updatedAt: new Date().toISOString(),
+      entries: state.entries, deleted: state.deleted || {}, settings: {}
+    };
+  }
+
+  // One full round trip: pull -> merge -> apply locally -> push (only if something differs).
+  async function syncCore(){
+    for(let attempt = 0; attempt < 3; attempt++){
+      const remote = await ghGetRemote();
+      const merged = mergeStores(remote.data, state);
+      if(storeSig(merged) !== storeSig(state)){
+        state.entries = merged.entries;
+        state.deleted = merged.deleted;
         saveStore();
-        renderEntries();
-        await ghPutRemote(remote.sha, payload);
-        setGhStatus("ok", I18N[lang].ghSynced + " · " + new Date().toLocaleTimeString(lang==="ar"?"ar-SA-u-ca-gregory":"en-US-u-ca-gregory", {hour:"2-digit", minute:"2-digit"}));
-      }catch(e){
-        setGhStatus("err", I18N[lang].ghSyncFailed + ": " + e.message);
+        renderDayNav(); renderEntries(); refreshNoteSuggestions();
       }
-    }, 900);
+      const remoteSig = (remote.exists && remote.data) ? storeSig(remote.data) : null;
+      if(remoteSig !== storeSig(state)){
+        try{
+          await ghPutRemote(remote.sha, ghPayload());
+        }catch(e){
+          if((e.status === 409 || e.status === 422) && attempt < 2) continue;   // someone pushed in between: retry
+          throw e;
+        }
+      }
+      return;
+    }
+  }
+
+  async function runSync(showToast){
+    if(!ghConfigured()) return false;
+    if(ghSyncing){ ghSyncAgain = true; return true; }
+    ghSyncing = true;
+    setGhStatus("busy", I18N[lang].ghSyncing);
+    let ok = true;
+    try{
+      do{
+        ghSyncAgain = false;
+        await syncCore();
+      }while(ghSyncAgain);
+      const t = new Date().toLocaleTimeString(lang === "ar" ? "ar-SA-u-ca-gregory" : "en-US-u-ca-gregory", {hour:"2-digit", minute:"2-digit"});
+      setGhStatus("ok", I18N[lang].ghSynced + " · " + t);
+      if(showToast) toast(I18N[lang].ghMerged);
+    }catch(e){
+      ok = false;
+      ghLastError = friendlyGhError(e);
+      setGhStatus("err", ghLastError);
+      if(showToast) toast(ghLastError);
+    }finally{
+      ghSyncing = false;
+    }
+    return ok;
+  }
+
+  // Called after every local change — debounced, never blocks the UI.
+  function autoSyncPush(){
+    if(!ghConfigured()) return;
+    clearTimeout(ghSyncTimer);
+    ghSyncTimer = setTimeout(()=> runSync(false), 900);
   }
 
   async function manualSyncNow(){
-    if(!ghCfg || !ghCfg.owner || !ghCfg.repo || !ghCfg.token){
-      toast(I18N[lang].ghMissingFields);
-      return;
-    }
-    setGhStatus("busy", I18N[lang].ghSyncing);
-    try{
-      const remote = await ghGetRemote();
-      const mergedEntries = remote.exists ? mergeEntries(remote.data, state) : state.entries;
-      state.entries = mergedEntries;
-      saveStore();
-      renderDayNav(); renderEntries();
-      refreshNoteSuggestions();
-      const payload = {entries: mergedEntries, settings: {}};
-      await ghPutRemote(remote.sha, payload);
-      setGhStatus("ok", I18N[lang].ghSynced);
-      toast(I18N[lang].ghMerged);
-    }catch(e){
-      setGhStatus("err", I18N[lang].ghSyncFailed + ": " + e.message);
-      toast(I18N[lang].ghSyncFailed + ": " + e.message);
-    }
+    const d = I18N[lang];
+    if(!ghConfigured()){ setGhResult("err", d.ghMissingFields); toast(d.ghMissingFields); return false; }
+    setGhResult("busy", d.ghSyncing);
+    const ok = await runSync(true);
+    if(ok) setGhResult("ok", d.ghConnected.replace("{repo}", ghCfg.owner + "/" + ghCfg.repo).replace("{path}", ghCfg.path));
+    else setGhResult("err", ghLastError);
+    return ok;
   }
 
   async function autoPullOnLoad(){
-    if(!ghCfg || !ghCfg.owner || !ghCfg.repo || !ghCfg.token) return;
-    setGhStatus("busy", I18N[lang].ghSyncing);
-    try{
-      const remote = await ghGetRemote();
-      if(remote.exists && remote.data){
-        state.entries = mergeEntries(remote.data, state);
-        saveStore();
-        renderDayNav(); renderEntries();
-        refreshNoteSuggestions();
-      }
-      setGhStatus("ok", I18N[lang].ghSynced);
-    }catch(e){
-      setGhStatus("err", I18N[lang].ghSyncFailed + ": " + e.message);
-    }
+    if(ghConfigured()) runSync(false);
+  }
+
+  function guessRepoFromUrl(){
+    const m = location.hostname.match(/^([^.]+)\.github\.io$/i);
+    if(!m) return null;
+    const owner = m[1];
+    const seg = location.pathname.split("/").filter(Boolean)[0];
+    return {owner, repo: (seg && !/\.html?$/i.test(seg)) ? seg : owner + ".github.io"};
   }
 
   function initGhUI(){
     const modal = document.getElementById("ghModal");
-    document.getElementById("ghBtn").addEventListener("click", ()=>{
+    const $ = id => document.getElementById(id);
+
+    $("ghBtn").addEventListener("click", ()=>{
       if(ghCfg){
-        document.getElementById("ghOwner").value = ghCfg.owner || "";
-        document.getElementById("ghRepo").value = ghCfg.repo || "";
-        document.getElementById("ghPath").value = ghCfg.path || "data/daily-income.json";
-        document.getElementById("ghBranchInput").value = ghCfg.branch || "main";
-        document.getElementById("ghToken").value = ghCfg.token || "";
+        $("ghOwner").value = ghCfg.owner || "";
+        $("ghRepo").value = ghCfg.repo || "";
+        $("ghPath").value = ghCfg.path || DEFAULT_GH_PATH;
+        $("ghBranchInput").value = ghCfg.branch || "main";
+        $("ghToken").value = ghCfg.token || "";
       } else {
-        document.getElementById("ghPath").value = "data/daily-income.json";
-        document.getElementById("ghBranchInput").value = "main";
+        const guess = guessRepoFromUrl();
+        $("ghOwner").value = guess ? guess.owner : "";
+        $("ghRepo").value = guess ? guess.repo : "";
+        $("ghPath").value = DEFAULT_GH_PATH;
+        $("ghBranchInput").value = "main";
+        $("ghToken").value = "";
       }
+      $("ghPathSelect").style.display = "none";
+      setGhResult("", "");
       modal.classList.add("show");
     });
-    document.getElementById("ghClose").addEventListener("click", ()=> modal.classList.remove("show"));
+    $("ghClose").addEventListener("click", ()=> modal.classList.remove("show"));
     modal.addEventListener("click", (e)=>{ if(e.target === modal) modal.classList.remove("show"); });
 
-    document.getElementById("ghSave").addEventListener("click", ()=>{
-      const owner = document.getElementById("ghOwner").value.trim();
-      const repo = document.getElementById("ghRepo").value.trim();
-      const path = document.getElementById("ghPath").value.trim() || "data/daily-income.json";
-      const branch = document.getElementById("ghBranchInput").value.trim() || "main";
-      const token = document.getElementById("ghToken").value.trim();
-      if(!owner || !repo || !token){ toast(I18N[lang].ghMissingFields); return; }
-      saveGhCfg({owner, repo, path, branch, token});
-      modal.classList.remove("show");
-      toast(I18N[lang].ghSavedToast);
-      manualSyncNow();
+    function readCfg(){
+      let repo = $("ghRepo").value.trim().replace(/^https?:\/\/github\.com\//i, "").replace(/\.git$/i, "");
+      repo = repo.split("/").filter(Boolean).pop() || repo;
+      return {
+        owner: $("ghOwner").value.trim(),
+        repo: repo,
+        path: ($("ghPath").value.trim() || DEFAULT_GH_PATH).replace(/^\/+/, ""),
+        branch: $("ghBranchInput").value.trim() || "main",
+        token: $("ghToken").value.trim()
+      };
+    }
+
+    // Find the JSON file(s) that sit next to index.html (repo root) or inside /data.
+    $("ghDetectBtn").addEventListener("click", async ()=>{
+      const d = I18N[lang];
+      const cfg = readCfg();
+      if(!cfg.owner || !cfg.repo || !cfg.token){ setGhResult("err", d.ghMissingFields); return; }
+      setGhResult("busy", d.ghChecking);
+      try{
+        const info = await ghRepoInfo(cfg);
+        if(cfg.branch === "main" && info.default_branch && info.default_branch !== "main"){
+          cfg.branch = info.default_branch;
+          $("ghBranchInput").value = cfg.branch;
+        }
+        const files = (await ghListDir(cfg, "")).concat(await ghListDir(cfg, "data"));
+        const sel = $("ghPathSelect");
+        if(files.length === 0){ sel.style.display = "none"; setGhResult("err", d.ghNoneFound); return; }
+        sel.innerHTML = files.map(f=> '<option value="' + escapeHtml(f) + '">' + escapeHtml(f) + '</option>').join("");
+        const best = pickBestJson(files) || files[0];
+        sel.value = best;
+        $("ghPath").value = best;
+        sel.style.display = "block";
+        setGhResult("ok", d.ghFound.replace("{n}", files.length));
+      }catch(e){
+        setGhResult("err", friendlyGhError(e));
+      }
     });
-    document.getElementById("ghSyncNow").addEventListener("click", manualSyncNow);
-    document.getElementById("ghDisconnect").addEventListener("click", ()=>{
+    $("ghPathSelect").addEventListener("change", ()=>{ $("ghPath").value = $("ghPathSelect").value; });
+
+    $("ghSave").addEventListener("click", async ()=>{
+      const d = I18N[lang];
+      const cfg = readCfg();
+      if(!cfg.owner || !cfg.repo || !cfg.token){ setGhResult("err", d.ghMissingFields); return; }
+      setGhResult("busy", d.ghChecking);
+      try{
+        const info = await ghRepoInfo(cfg);
+        if(cfg.branch === "main" && info.default_branch && info.default_branch !== "main"){
+          cfg.branch = info.default_branch;
+          $("ghBranchInput").value = cfg.branch;
+        }
+        if(info.permissions && info.permissions.push === false){ const pe = new Error("no push"); pe.status = 403; throw pe; }
+        const r = await ghGetRemote(cfg);
+        if(!r.exists && cfg.path === DEFAULT_GH_PATH){
+          // No file at the default path: adopt the JSON file that sits next to the tool, if any.
+          const found = pickBestJson((await ghListDir(cfg, "")).concat(await ghListDir(cfg, "data")));
+          if(found){ cfg.path = found; $("ghPath").value = found; setGhResult("busy", d.ghUsingFile.replace("{f}", found)); }
+        }
+      }catch(e){
+        setGhResult("err", friendlyGhError(e));
+        return;
+      }
+      saveGhCfg(cfg);
+      const ok = await manualSyncNow();
+      if(ok) modal.classList.remove("show");
+    });
+
+    $("ghSyncNow").addEventListener("click", manualSyncNow);
+    $("ghDisconnect").addEventListener("click", ()=>{
       clearGhCfg();
-      document.getElementById("ghStatus").style.display = "none";
+      $("ghStatus").style.display = "none";
       modal.classList.remove("show");
       toast(I18N[lang].ghDisconnectedToast);
     });
-    if(ghCfg && ghCfg.owner && ghCfg.repo && ghCfg.token) setGhStatus("", I18N[lang].ghSynced);
+
+    // Keep devices in step: sync when the app comes back to the foreground, when the network returns,
+    // and every two minutes while it is open.
+    document.addEventListener("visibilitychange", ()=>{
+      if(document.visibilityState === "visible" && ghConfigured()) runSync(false);
+    });
+    window.addEventListener("online", ()=>{ if(ghConfigured()) runSync(false); });
+    setInterval(()=>{
+      if(document.visibilityState === "visible" && ghConfigured() && !ghSyncing) runSync(false);
+    }, 120000);
   }
 
   /* ============ PIN lock ============ */
@@ -1314,6 +1531,7 @@
         target.method = selectedMethod;
         target.shift = currentShift;
         target.note = note;
+        target.ts = Date.now();
       }
       saveStore();
       cancelEdit();
@@ -1331,7 +1549,8 @@
       amount: Math.round(amt*100)/100,
       method: selectedMethod,
       shift: currentShift,
-      note: note
+      note: note,
+      ts: Date.now()
     };
     if(!state.entries[currentDate]) state.entries[currentDate] = [];
     state.entries[currentDate].push(entry);
@@ -1385,12 +1604,18 @@
     const list = state.entries[dateAtDelete] || [];
     const removed = list.find(e=>e.id===id);
     state.entries[dateAtDelete] = list.filter(e=>e.id!==id);
+    if(removed){
+      state.deleted = state.deleted || {};
+      state.deleted[id] = Date.now();
+    }
     saveStore();
     renderEntries();
     autoSyncPush();
     if(removed){
       toastWithUndo(I18N[lang].deletedToast, ()=>{
         if(!state.entries[dateAtDelete]) state.entries[dateAtDelete] = [];
+        removed.ts = Date.now() + 1;   // newer than the tombstone, so the restore wins on every device
+        if(state.deleted) delete state.deleted[id];
         state.entries[dateAtDelete].push(removed);
         saveStore();
         if(currentDate === dateAtDelete) renderEntries();
@@ -1724,16 +1949,22 @@
         const parsed = JSON.parse(reader.result);
         if(!parsed || typeof parsed !== "object" || !parsed.entries) throw new Error("bad shape");
         if(!confirm(I18N[lang].confirmImport)){ e.target.value=""; return; }
+        // an explicit import means "bring these back": clear tombstones for the ids being imported
         Object.keys(parsed.entries).forEach(date=>{
-          const incoming = parsed.entries[date] || [];
-          const existing = state.entries[date] || [];
-          const existingIds = new Set(existing.map(x=>x.id));
-          incoming.forEach(en=>{ if(!existingIds.has(en.id)) existing.push(en); });
-          state.entries[date] = existing;
+          (parsed.entries[date] || []).forEach(en=>{
+            if(en && en.id && state.deleted && state.deleted[en.id]){
+              delete state.deleted[en.id];
+              en.ts = Date.now();
+            }
+          });
         });
+        const mergedImport = mergeStores(parsed, state);
+        state.entries = mergedImport.entries;
+        state.deleted = mergedImport.deleted;
         saveStore();
         renderDayNav(); renderEntries();
         refreshNoteSuggestions();
+        autoSyncPush();
         toast(I18N[lang].importedOk);
       }catch(err){
         toast(I18N[lang].importedErr);
@@ -1838,7 +2069,6 @@
   document.getElementById("printBtn").addEventListener("click", ()=>{
     buildPrintView();
     if(isIOSStandalone()){
-      toast(I18N[lang].printOpeningSafari);
       openPrintInRealSafari();
     } else {
       window.print();
