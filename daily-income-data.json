@@ -1,7 +1,7 @@
 {
   "app": "daily-income",
   "version": 2,
-  "updatedAt": "2026-09-28T18:03:09.312Z",
+  "updatedAt": "2026-09-28T18:03:14.148Z",
   "entries": {
     "2026-09-02": [
       {
@@ -427,6 +427,15 @@
         "shift": "evening",
         "note": "",
         "ts": 1790618587726
+      },
+      {
+        "id": "1790618592506_yptju",
+        "time": "21:03",
+        "amount": 96,
+        "method": "cash",
+        "shift": "evening",
+        "note": "",
+        "ts": 1790618592506
       }
     ]
   },
