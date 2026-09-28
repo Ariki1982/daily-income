@@ -1,4 +1,397 @@
 {
-  "entries": {},
+  "app": "daily-income",
+  "version": 2,
+  "updatedAt": "2026-09-28T11:32:03.310Z",
+  "entries": {
+    "2026-09-02": [
+      {
+        "id": "1789995786424_w1813",
+        "time": "16:03",
+        "amount": 110.4,
+        "method": "cash",
+        "shift": "morning",
+        "note": ""
+      },
+      {
+        "id": "1789995926119_issw3",
+        "time": "16:05",
+        "amount": 190.4,
+        "method": "cash",
+        "shift": "morning",
+        "note": ""
+      },
+      {
+        "id": "1789995967850_mgif1",
+        "time": "16:06",
+        "amount": 90,
+        "method": "cash",
+        "shift": "morning",
+        "note": "90"
+      },
+      {
+        "id": "1789995988862_vbdgt",
+        "time": "16:06",
+        "amount": 200,
+        "method": "cash",
+        "shift": "morning",
+        "note": ""
+      },
+      {
+        "id": "1789996065474_58v5o",
+        "time": "16:07",
+        "amount": 234,
+        "method": "cash",
+        "shift": "morning",
+        "note": "234"
+      },
+      {
+        "id": "1789996068661_sg2jk",
+        "time": "16:07",
+        "amount": 200,
+        "method": "cash",
+        "shift": "morning",
+        "note": ""
+      }
+    ],
+    "2026-09-03": [
+      {
+        "id": "1789996141585_o9k3m",
+        "time": "16:09",
+        "amount": 185,
+        "method": "cash",
+        "shift": "morning",
+        "note": ""
+      },
+      {
+        "id": "1789996145934_47cxk",
+        "time": "16:09",
+        "amount": 250,
+        "method": "cash",
+        "shift": "morning",
+        "note": ""
+      }
+    ],
+    "2026-09-04": [
+      {
+        "id": "1789996236124_1634f",
+        "time": "16:10",
+        "amount": 356,
+        "method": "cash",
+        "shift": "morning",
+        "note": ""
+      }
+    ],
+    "2026-09-05": [
+      {
+        "id": "1789996374391_9jxru",
+        "time": "16:12",
+        "amount": 180.5,
+        "method": "cash",
+        "shift": "morning",
+        "note": ""
+      }
+    ],
+    "2026-09-06": [
+      {
+        "id": "1789996439557_l9pvj",
+        "time": "16:13",
+        "amount": 250,
+        "method": "cash",
+        "shift": "morning",
+        "note": ""
+      }
+    ],
+    "2026-09-07": [
+      {
+        "id": "1789996459926_u8l00",
+        "time": "16:14",
+        "amount": 196,
+        "method": "cash",
+        "shift": "morning",
+        "note": ""
+      }
+    ],
+    "2026-09-08": [
+      {
+        "id": "1789996554162_joyff",
+        "time": "16:15",
+        "amount": 541,
+        "method": "cash",
+        "shift": "morning",
+        "note": ""
+      }
+    ],
+    "2026-09-09": [
+      {
+        "id": "1789996650864_i2xik",
+        "time": "16:17",
+        "amount": 322,
+        "method": "cash",
+        "shift": "morning",
+        "note": ""
+      }
+    ],
+    "2026-09-10": [
+      {
+        "id": "1789996845864_boz8c",
+        "time": "16:20",
+        "amount": 1463,
+        "method": "cash",
+        "shift": "morning",
+        "note": ""
+      }
+    ],
+    "2026-09-11": [
+      {
+        "id": "1789996886760_cvzqh",
+        "time": "16:21",
+        "amount": 257,
+        "method": "cash",
+        "shift": "morning",
+        "note": ""
+      }
+    ],
+    "2026-09-12": [
+      {
+        "id": "1789997031008_7bgu4",
+        "time": "16:23",
+        "amount": 602.4,
+        "method": "cash",
+        "shift": "morning",
+        "note": ""
+      }
+    ],
+    "2026-09-13": [
+      {
+        "id": "1789998535690_1sz3r",
+        "time": "16:48",
+        "amount": 1450,
+        "method": "cash",
+        "shift": "morning",
+        "note": ""
+      }
+    ],
+    "2026-09-14": [
+      {
+        "id": "1789998545178_sjgdt",
+        "time": "16:49",
+        "amount": 200,
+        "method": "cash",
+        "shift": "morning",
+        "note": ""
+      }
+    ],
+    "2026-09-15": [
+      {
+        "id": "1789998552668_p4ln0",
+        "time": "16:49",
+        "amount": 190,
+        "method": "cash",
+        "shift": "morning",
+        "note": ""
+      }
+    ],
+    "2026-09-16": [
+      {
+        "id": "1789998581659_ly5kd",
+        "time": "16:49",
+        "amount": 796,
+        "method": "cash",
+        "shift": "morning",
+        "note": ""
+      }
+    ],
+    "2026-09-19": [
+      {
+        "id": "1789998603535_z1y3w",
+        "time": "16:50",
+        "amount": 515,
+        "method": "cash",
+        "shift": "morning",
+        "note": ""
+      }
+    ],
+    "2026-09-20": [
+      {
+        "id": "1789998614886_fv09m",
+        "time": "16:50",
+        "amount": 1471,
+        "method": "cash",
+        "shift": "morning",
+        "note": ""
+      }
+    ],
+    "2026-09-21": [
+      {
+        "id": "1789998624034_56ovk",
+        "time": "16:50",
+        "amount": 296,
+        "method": "cash",
+        "shift": "morning",
+        "note": ""
+      },
+      {
+        "id": "1790007082138_bal6k",
+        "time": "19:11",
+        "amount": 450,
+        "method": "cash",
+        "shift": "morning",
+        "note": ""
+      },
+      {
+        "id": "1790056175581_ymdwg",
+        "time": "08:49",
+        "amount": 250,
+        "method": "cash",
+        "shift": "morning",
+        "note": ""
+      }
+    ],
+    "2026-09-22": [
+      {
+        "id": "1790093580858_u12yh",
+        "time": "19:13",
+        "amount": 96,
+        "method": "cash",
+        "shift": "morning",
+        "note": ""
+      },
+      {
+        "id": "1790093592352_qnske",
+        "time": "19:13",
+        "amount": 270,
+        "method": "cash",
+        "shift": "morning",
+        "note": ""
+      },
+      {
+        "id": "1790229700373_wvti3",
+        "time": "09:01",
+        "amount": 500,
+        "method": "cash",
+        "shift": "morning",
+        "note": ""
+      }
+    ],
+    "2026-09-24": [
+      {
+        "id": "1790235833679_bseh4",
+        "time": "10:43",
+        "amount": 96,
+        "method": "cash",
+        "shift": "morning",
+        "note": ""
+      },
+      {
+        "id": "1790263448762_a0xfw",
+        "time": "18:24",
+        "amount": 300,
+        "method": "cash",
+        "shift": "evening",
+        "note": ""
+      },
+      {
+        "id": "1790263456138_tyds7",
+        "time": "18:24",
+        "amount": 160,
+        "method": "cash",
+        "shift": "evening",
+        "note": ""
+      },
+      {
+        "id": "1790273177879_7n8xg",
+        "time": "21:06",
+        "amount": 296,
+        "method": "cash",
+        "shift": "evening",
+        "note": ""
+      }
+    ],
+    "2026-09-26": [
+      {
+        "id": "1790422666738_yfb7j",
+        "time": "14:37",
+        "amount": 200,
+        "method": "cash",
+        "shift": "morning",
+        "note": ""
+      }
+    ],
+    "2026-09-27": [
+      {
+        "id": "1790495755333_xscku",
+        "time": "10:55",
+        "amount": 450,
+        "method": "cash",
+        "shift": "morning",
+        "note": ""
+      },
+      {
+        "id": "1790568164943_90eqp",
+        "time": "07:02",
+        "amount": 300,
+        "method": "cash",
+        "shift": "callout",
+        "note": ""
+      },
+      {
+        "id": "1790568175773_tv30l",
+        "time": "07:02",
+        "amount": 96,
+        "method": "cash",
+        "shift": "callout",
+        "note": ""
+      },
+      {
+        "id": "1790568180711_ouasj",
+        "time": "07:03",
+        "amount": 50,
+        "method": "cash",
+        "shift": "callout",
+        "note": ""
+      },
+      {
+        "id": "1790575666685_bptis",
+        "time": "09:07",
+        "amount": 650,
+        "method": "cash",
+        "shift": "evening",
+        "note": ""
+      },
+      {
+        "id": "1790575679006_t6btk",
+        "time": "09:07",
+        "amount": 96,
+        "method": "cash",
+        "shift": "evening",
+        "note": ""
+      },
+      {
+        "id": "1790575683822_isz89",
+        "time": "09:08",
+        "amount": 150,
+        "method": "cash",
+        "shift": "evening",
+        "note": ""
+      },
+      {
+        "id": "1790575687332_atkrc",
+        "time": "09:08",
+        "amount": 250,
+        "method": "cash",
+        "shift": "evening",
+        "note": ""
+      },
+      {
+        "id": "1790575692157_ag28b",
+        "time": "09:08",
+        "amount": 200,
+        "method": "cash",
+        "shift": "evening",
+        "note": ""
+      }
+    ]
+  },
+  "deleted": {},
   "settings": {}
 }
