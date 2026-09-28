@@ -1,7 +1,7 @@
 {
   "app": "daily-income",
   "version": 2,
-  "updatedAt": "2026-09-28T11:34:15.343Z",
+  "updatedAt": "2026-09-28T11:34:32.542Z",
   "entries": {
     "2026-09-02": [
       {
@@ -409,6 +409,15 @@
         "shift": "morning",
         "note": "",
         "ts": 1790595251760
+      },
+      {
+        "id": "1790595270653_ngazh",
+        "time": "14:34",
+        "amount": 350,
+        "method": "cash",
+        "shift": "callout",
+        "note": "",
+        "ts": 1790595270653
       }
     ]
   },
