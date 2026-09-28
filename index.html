@@ -172,6 +172,7 @@
   .trend-head{margin-bottom:6px;}
   .trend-title{font-size:12px; font-weight:700; color:var(--ink-dim);}
   #trendSvg{width:100%; height:70px; display:block;}
+  #shiftCompareSvg{width:100%; height:80px; display:block;}
 
   .field input#pinNewInput, .field input#pinConfirmInput{
     text-align:center; letter-spacing:10px; font-size:22px; direction:ltr;
@@ -437,6 +438,8 @@
     <div class="trend-head"><span class="trend-title" data-i18n="trendTitle">الاتجاه الشهري (آخر 6 أشهر)</span></div>
     <svg id="trendSvg" viewBox="0 0 300 90" preserveAspectRatio="none"></svg>
     <div class="breakdown" id="monthBreakdownRow" style="margin-top:8px;"></div>
+    <div class="trend-head" style="margin-top:14px;"><span class="trend-title" data-i18n="shiftCompareTitle">مقارنة الدوامات (هذا الشهر)</span></div>
+    <svg id="shiftCompareSvg" viewBox="0 0 300 78"></svg>
   </div>
 
   <div class="card" id="entryFormCard">
@@ -634,7 +637,7 @@
       printReportTitle:"تقرير الدخل الشهري", printGrandTotal:"الإجمالي الكلي لكل الفترة", printNoData:"لا توجد أي بيانات مسجلة للطباعة",
       printOpeningSafari:"يفتح تقرير الطباعة في Safari لأن الطباعة غير مدعومة داخل تطبيق الشاشة الرئيسية",
       monthTotalPrefix:"إجمالي",
-      undoBtn:"تراجع", avgPerDay:"متوسط اليوم", trendTitle:"الاتجاه الشهري (آخر 6 أشهر)", last7days:"آخر 7 أيام",
+      undoBtn:"تراجع", avgPerDay:"متوسط اليوم", trendTitle:"الاتجاه الشهري (آخر 6 أشهر)", last7days:"آخر 7 أيام", shiftCompareTitle:"مقارنة الدوامات (هذا الشهر)",
       editingBanner:"تعديل حركة موجودة", cancelEdit:"إلغاء", saveEdit:"حفظ التعديل", savedEditToast:"تم حفظ التعديل",
       lockTitle:"قفل بكود PIN", lockHint:"كود مكوّن من 4 أرقام يُطلب عند فتح الأداة. يُحفظ مشفّراً في هذا الجهاز فقط.",
       pinNew:"الكود الجديد (4 أرقام)", pinConfirm:"تأكيد الكود", pinSave:"حفظ", pinRemove:"إزالة القفل",
@@ -680,7 +683,7 @@
       printReportTitle:"Monthly Income Report", printGrandTotal:"Grand total for the whole period", printNoData:"No data recorded to print",
       printOpeningSafari:"Opening the print report in Safari — printing isn't supported inside the home-screen app",
       monthTotalPrefix:"Total for",
-      undoBtn:"Undo", avgPerDay:"Daily average", trendTitle:"Monthly trend (last 6 months)", last7days:"Last 7 days",
+      undoBtn:"Undo", avgPerDay:"Daily average", trendTitle:"Monthly trend (last 6 months)", last7days:"Last 7 days", shiftCompareTitle:"Shift comparison (this month)",
       editingBanner:"Editing existing entry", cancelEdit:"Cancel", saveEdit:"Save changes", savedEditToast:"Changes saved",
       lockTitle:"PIN lock", lockHint:"A 4-digit code required to open the tool. Stored hashed on this device only.",
       pinNew:"New code (4 digits)", pinConfirm:"Confirm code", pinSave:"Save", pinRemove:"Remove lock",
@@ -700,9 +703,9 @@
   ];
 
   const SHIFTS = [
-    {id:"morning", key:"shiftMorning"},
-    {id:"evening", key:"shiftEvening"},
-    {id:"callout", key:"shiftCallout"}
+    {id:"morning", key:"shiftMorning", color:"var(--teal)"},
+    {id:"evening", key:"shiftEvening", color:"var(--card)"},
+    {id:"callout", key:"shiftCallout", color:"var(--gold)"}
   ];
   function shiftLabel(shiftId){
     const s = SHIFTS.find(x=>x.id===shiftId);
@@ -1447,6 +1450,7 @@
     document.getElementById("weekTotalLine").textContent = `${I18N[lang].last7days}: ${weekTotal.toFixed(2)} ${I18N[lang].currency}`;
     renderTrend();
     renderMonthBreakdown();
+    renderShiftCompare();
   }
 
   function monthTotalFor(monthKey){
@@ -1503,6 +1507,33 @@
         bd.appendChild(chip);
       }
     });
+  }
+
+  function renderShiftCompare(){
+    const monthKey = currentDate.slice(0,7);
+    const byShift = {};
+    SHIFTS.forEach(s=> byShift[s.id] = 0);
+    Object.keys(state.entries).forEach(d=>{
+      if(d.slice(0,7) === monthKey){
+        (state.entries[d] || []).forEach(en=>{
+          if(en.shift && byShift.hasOwnProperty(en.shift)) byShift[en.shift] += en.amount;
+        });
+      }
+    });
+    const svg = document.getElementById("shiftCompareSvg");
+    const max = Math.max(...SHIFTS.map(s=> byShift[s.id]), 1);
+    const rowH = 24, barMaxW = 190, labelW = 62;
+    let html = "";
+    SHIFTS.forEach((s,i)=>{
+      const y = i*rowH + 4;
+      const val = byShift[s.id];
+      const barW = Math.max(val>0?3:0, (val/max)*barMaxW);
+      html += `<text x="${labelW-6}" y="${y+12}" font-size="11" text-anchor="end" fill="var(--ink-dim)" font-family="var(--font-ui)">${I18N[lang][s.key]}</text>
+        <rect x="${labelW}" y="${y}" width="${barMaxW}" height="15" rx="4" fill="var(--line)" opacity="0.4"></rect>
+        <rect x="${labelW}" y="${y}" width="${barW}" height="15" rx="4" fill="${s.color}"></rect>
+        <text x="${labelW+barMaxW+4}" y="${y+12}" font-size="10.5" fill="var(--ink-dim)" font-family="var(--font-num)">${val.toFixed(0)}</text>`;
+    });
+    svg.innerHTML = html;
   }
 
   function renderTotals(list){
