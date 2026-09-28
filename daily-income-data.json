@@ -1,7 +1,7 @@
 {
   "app": "daily-income",
   "version": 2,
-  "updatedAt": "2026-09-28T11:34:32.542Z",
+  "updatedAt": "2026-09-28T18:03:09.312Z",
   "entries": {
     "2026-09-02": [
       {
@@ -418,6 +418,15 @@
         "shift": "callout",
         "note": "",
         "ts": 1790595270653
+      },
+      {
+        "id": "1790618587725_5qeui",
+        "time": "21:03",
+        "amount": 200,
+        "method": "cash",
+        "shift": "evening",
+        "note": "",
+        "ts": 1790618587726
       }
     ]
   },
