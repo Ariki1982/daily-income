@@ -1,7 +1,7 @@
 {
   "app": "daily-income",
   "version": 2,
-  "updatedAt": "2026-09-29T17:36:19.631Z",
+  "updatedAt": "2026-09-29T17:36:41.015Z",
   "entries": {
     "2026-09-02": [
       {
@@ -451,11 +451,11 @@
       {
         "id": "1790703375903_xtfqr",
         "time": "20:36",
-        "amount": 400,
+        "amount": 470,
         "method": "cash",
         "shift": "evening",
         "note": "",
-        "ts": 1790703375903
+        "ts": 1790703399234
       }
     ]
   },
