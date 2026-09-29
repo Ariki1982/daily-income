@@ -417,6 +417,15 @@
   .tg-right{display:inline-flex; align-items:center; gap:8px;}
   .tg-val{font-family:var(--font-num); font-size:13px; font-weight:800; color:var(--ink); direction:ltr; unicode-bidi:isolate;}
   .tg-note{font-size:12px; font-weight:600; color:var(--ink-dim); margin-top:8px;}
+  .backup-nudge{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    background:var(--gold-dim); border:1px solid var(--gold); border-radius:10px;
+    padding:9px 12px; margin-bottom:12px; font-size:12.5px; font-weight:600; color:var(--ink);
+  }
+  .backup-nudge .bn-actions{display:flex; align-items:center; gap:6px; flex-shrink:0;}
+  .backup-nudge button{border:none; border-radius:7px; font-family:var(--font-ui); cursor:pointer;}
+  .backup-nudge #bnEnable{background:var(--gold); color:#1c1c1c; font-weight:800; font-size:12px; padding:6px 12px;}
+  .backup-nudge .bn-x{background:transparent; color:var(--ink-dim); font-size:14px; padding:4px 6px;}
 </style>
 </head>
 <body>
@@ -459,6 +468,14 @@
     </div>
     <button id="nextDay">›</button>
     <input type="date" id="datePicker">
+  </div>
+
+  <div class="backup-nudge" id="backupNudge" style="display:none;">
+    <span class="bn-text" id="bnText"></span>
+    <span class="bn-actions">
+      <button id="bnEnable" data-i18n="bnEnable">تفعيل</button>
+      <button id="bnDismiss" class="bn-x">✕</button>
+    </span>
   </div>
 
   <div class="month-total" id="monthTotalRow">
@@ -713,6 +730,7 @@
       ghSavedToast:"تم حفظ إعدادات المزامنة", ghDisconnectedToast:"تم فصل المزامنة",
       ghSyncing:"جارِ المزامنة…", ghSynced:"تمت المزامنة", ghSyncFailed:"تعذّرت المزامنة",
       ghNotConfigured:"المزامنة غير مفعّلة", ghMerged:"تم الدمج مع GitHub بنجاح",
+      bnMessage:"عندك {n} حركة محفوظة على هذا الجهاز فقط — فعّل مزامنة GitHub حتى لا تضيع.", bnEnable:"تفعيل",
       profileTitle:"بيانات الطبيب / الموظف", profileHint:"الاسم والوظيفة يظهران أعلى الشاشة وفي تقرير الطباعة وملف Excel. التارجت الشهري يعرض نسبة تحقيقك منه.",
       profName:"الاسم", profJob:"الوظيفة الحالية", profTarget:"التارجت الشهري (ر.س)", profSave:"حفظ", profClear:"مسح",
       profSavedToast:"تم حفظ البيانات", profNamePh:"مثال: د. عبدالوهاب العريقي", profJobPh:"مثال: طبيب أسنان",
@@ -770,6 +788,7 @@
       ghSavedToast:"Sync settings saved", ghDisconnectedToast:"Sync disconnected",
       ghSyncing:"Syncing…", ghSynced:"Synced", ghSyncFailed:"Sync failed",
       ghNotConfigured:"Sync not enabled", ghMerged:"Merged with GitHub successfully",
+      bnMessage:"You have {n} entries saved only on this device — enable GitHub sync so they are never lost.", bnEnable:"Enable",
       profileTitle:"Doctor / employee details", profileHint:"Name and job show at the top, on the printed report and in the Excel file. The monthly target shows how much of it you have reached.",
       profName:"Name", profJob:"Current job title", profTarget:"Monthly target (SAR)", profSave:"Save", profClear:"Clear",
       profSavedToast:"Details saved", profNamePh:"e.g. Dr. Abdulwahab Al-Areqi", profJobPh:"e.g. Dentist",
@@ -811,6 +830,13 @@
   function shiftLabel(shiftId){
     const s = SHIFTS.find(x=>x.id===shiftId);
     return s ? I18N[lang][s.key] : "";
+  }
+
+  function fmtMoney(n){
+    return (Number(n)||0).toLocaleString("en-US", {minimumFractionDigits:2, maximumFractionDigits:2});
+  }
+  function fmtInt(n){
+    return Math.round(Number(n)||0).toLocaleString("en-US");
   }
 
   const STORE_KEY = "tmc_daily_income_v1";
@@ -1214,7 +1240,7 @@
       }
       saveGhCfg(cfg);
       const ok = await manualSyncNow();
-      if(ok) modal.classList.remove("show");
+      if(ok){ modal.classList.remove("show"); renderBackupNudge(); }
     });
 
     $("ghSyncNow").addEventListener("click", manualSyncNow);
@@ -1257,14 +1283,34 @@
     const pct = (total / t) * 100;
     card.style.display = "block";
     document.getElementById("tgLabel").textContent = d.targetLabel;
-    document.getElementById("tgVal").textContent = total.toFixed(0) + " / " + t.toFixed(0) + " " + d.currency;
+    document.getElementById("tgVal").textContent = fmtInt(total) + " / " + fmtInt(t) + " " + d.currency;
     document.getElementById("tgPct").textContent = pct.toFixed(1) + "%";
     const fill = document.getElementById("tgFill");
     fill.style.width = Math.min(100, Math.round(pct * 10) / 10) + "%";
     fill.style.background = pct >= 100 ? "var(--cash)" : "var(--teal)";
     document.getElementById("tgNote").textContent = total >= t
-      ? d.targetReached + (total > t ? " (+" + (total - t).toFixed(2) + " " + d.currency + ")" : "")
-      : d.targetRemaining + ": " + (t - total).toFixed(2) + " " + d.currency;
+      ? d.targetReached + (total > t ? " (+" + fmtMoney(total - t) + " " + d.currency + ")" : "")
+      : d.targetRemaining + ": " + fmtMoney(t - total) + " " + d.currency;
+  }
+
+  const BACKUP_NUDGE_KEY = "tmc_daily_income_backup_nudge_dismissed";
+  function renderBackupNudge(){
+    const el = document.getElementById("backupNudge");
+    if(ghConfigured()){ el.style.display = "none"; return; }
+    let dismissed = false;
+    try{ dismissed = localStorage.getItem(BACKUP_NUDGE_KEY) === "1"; }catch(e){}
+    if(dismissed){ el.style.display = "none"; return; }
+    const n = allEntriesFlat().length;
+    if(n < 15){ el.style.display = "none"; return; }
+    document.getElementById("bnText").textContent = I18N[lang].bnMessage.replace("{n}", n);
+    el.style.display = "flex";
+  }
+  function initBackupNudgeUI(){
+    document.getElementById("bnEnable").addEventListener("click", ()=> document.getElementById("ghBtn").click());
+    document.getElementById("bnDismiss").addEventListener("click", ()=>{
+      try{ localStorage.setItem(BACKUP_NUDGE_KEY, "1"); }catch(e){}
+      document.getElementById("backupNudge").style.display = "none";
+    });
   }
 
   function initProfileUI(){
@@ -1287,6 +1333,7 @@
       saveStore();
       renderProfile();
       renderEntries();
+      renderBackupNudge();
       autoSyncPush();
       modal.classList.remove("show");
       toast(I18N[lang].profSavedToast);
@@ -1647,6 +1694,7 @@
     return state.entries[dateStr] || [];
   }
   function addEntry(){
+    if(document.getElementById("addBtn").disabled) return;
     const amt = parseFloat(document.getElementById("amountInput").value);
     if(!amt || amt <= 0){ toast(I18N[lang].needAmount); return; }
     if(amt >= 5000){
@@ -1687,6 +1735,10 @@
     if(!state.entries[currentDate]) state.entries[currentDate] = [];
     state.entries[currentDate].push(entry);
     saveStore();
+    const addBtnEl = document.getElementById("addBtn");
+    const prevLabel = addBtnEl.textContent;
+    addBtnEl.disabled = true;
+    setTimeout(()=>{ addBtnEl.disabled = false; if(!editingId) addBtnEl.textContent = I18N[lang].addBtn; else addBtnEl.textContent = prevLabel; }, 700);
     document.getElementById("amountInput").value = "";
     document.getElementById("noteInput").value = "";
     document.querySelectorAll(".qa-chip").forEach(c=> c.classList.remove("hit"));
@@ -1811,19 +1863,20 @@
     const [y,m] = monthKey.split("-").map(Number);
     const monthLabel = new Intl.DateTimeFormat(locale, {month:"long", year:"numeric"}).format(new Date(y, m-1, 1));
     document.getElementById("monthTotalLabel").textContent = `${I18N[lang].monthTotalPrefix} ${monthLabel}`;
-    document.getElementById("monthTotalVal").textContent = total.toFixed(2) + " " + I18N[lang].currency;
+    document.getElementById("monthTotalVal").textContent = fmtMoney(total) + " " + I18N[lang].currency;
     renderTarget(total);
     const avgEl = document.getElementById("monthTotalAvg");
-    avgEl.textContent = activeDays > 0 ? `${I18N[lang].avgPerDay}: ${(total/activeDays).toFixed(2)} ${I18N[lang].currency}` : "";
+    avgEl.textContent = activeDays > 0 ? `${I18N[lang].avgPerDay}: ${fmtMoney(total/activeDays)} ${I18N[lang].currency}` : "";
     let weekTotal = 0;
     for(let i=0;i<7;i++){
       const d = shiftDate(currentDate, -i);
       (state.entries[d] || []).forEach(en=> weekTotal += en.amount);
     }
-    document.getElementById("weekTotalLine").textContent = `${I18N[lang].last7days}: ${weekTotal.toFixed(2)} ${I18N[lang].currency}`;
+    document.getElementById("weekTotalLine").textContent = `${I18N[lang].last7days}: ${fmtMoney(weekTotal)} ${I18N[lang].currency}`;
     renderTrend();
     renderMonthBreakdown();
     renderShiftCompare();
+    renderBackupNudge();
   }
 
   function monthTotalFor(monthKey){
@@ -1934,7 +1987,7 @@
 
   function renderTotals(list){
     const total = list.reduce((s,e)=> s + e.amount, 0);
-    document.getElementById("totalVal").textContent = total.toFixed(2);
+    document.getElementById("totalVal").textContent = fmtMoney(total);
     const byMethod = {};
     METHODS.forEach(m=> byMethod[m.id]=0);
     list.forEach(e=> byMethod[e.method] = (byMethod[e.method]||0) + e.amount);
@@ -2266,6 +2319,8 @@
     autoPullOnLoad();
     initPinUI();
     initProfileUI();
+    initBackupNudgeUI();
+    renderBackupNudge();
     showLockOverlayIfNeeded();
   }
   init();
