@@ -94,9 +94,10 @@
     background:linear-gradient(var(--bg) 78%, transparent);
     display:flex; align-items:center; justify-content:space-between; gap:10px;
   }
-  .brand{display:flex; flex-direction:column; line-height:1.15;}
+  .brand{display:flex; flex-direction:column; line-height:1.15; min-width:0; flex:1; cursor:pointer;}
   .brand .title{font-size:20px; font-weight:800; letter-spacing:.2px;}
-  .brand .sub{font-size:12px; color:var(--ink-dim); font-weight:500;}
+  .brand .sub{font-size:12px; color:var(--ink-dim); font-weight:500; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .brand .sub::after{content:" ✎"; opacity:.55; font-size:11px;}
   .iconrow{display:flex; gap:8px;}
   .iconbtn{
     width:38px; height:38px; border-radius:var(--radius);
@@ -406,13 +407,23 @@
   .gh-result.ok{color:var(--cash);}
   .gh-result.err{color:var(--danger);}
   .gh-result.busy{color:var(--gold);}
+  .field input.auto-dir{direction:inherit; text-align:start; unicode-bidi:plaintext;}
+  .target-card{
+    background:var(--paper); border:1px solid var(--line); border-radius:14px;
+    padding:12px 14px 12px; margin-bottom:14px; box-shadow:var(--shadow);
+  }
+  .tg-top{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px;}
+  .tg-label{font-size:13px; font-weight:800; color:var(--ink);}
+  .tg-right{display:inline-flex; align-items:center; gap:8px;}
+  .tg-val{font-family:var(--font-num); font-size:13px; font-weight:800; color:var(--ink); direction:ltr; unicode-bidi:isolate;}
+  .tg-note{font-size:12px; font-weight:600; color:var(--ink-dim); margin-top:8px;}
 </style>
 </head>
 <body>
 <div class="wrap">
 
   <div class="topbar">
-    <div class="brand">
+    <div class="brand" id="brandBtn" role="button" tabindex="0">
       <span class="title" data-i18n="appTitle">دخل اليوم</span>
       <span class="sub" data-i18n="appSub">تسجيل دخل نهاية الدوام</span>
     </div>
@@ -459,6 +470,15 @@
       <span class="mt-avg" id="weekTotalLine"></span>
     </span>
     <button class="mt-arrow" id="nextMonth">›</button>
+  </div>
+
+  <div class="target-card" id="targetCard" style="display:none;">
+    <div class="tg-top">
+      <span class="tg-label" id="tgLabel">التارجت الشهري</span>
+      <span class="tg-right"><span class="tg-val" id="tgVal"></span><span class="sc-pct" id="tgPct"></span></span>
+    </div>
+    <div class="sc-track"><div class="sc-fill" id="tgFill"></div></div>
+    <div class="tg-note" id="tgNote"></div>
   </div>
 
   <div class="trend-card" id="trendCard">
@@ -513,6 +533,35 @@
 <input type="file" id="fileInput" accept="application/json">
 <div class="toast" id="toast"></div>
 <div id="printView"></div>
+
+<div class="modal-overlay" id="profileModal">
+  <div class="modal-sheet">
+    <button class="modal-close-x" id="profClose">✕</button>
+    <h3 data-i18n="profileTitle">بيانات الطبيب / الموظف</h3>
+    <p class="hint" data-i18n="profileHint">الاسم والوظيفة يظهران أعلى الشاشة وفي تقرير الطباعة وملف Excel. التارجت الشهري يعرض نسبة تحقيقك منه.</p>
+    <div class="field">
+      <label data-i18n="profName">الاسم</label>
+      <input type="text" id="profName" class="auto-dir" data-i18n-ph="profNamePh" placeholder="مثال: د. عبدالوهاب العريقي">
+    </div>
+    <div class="field">
+      <label data-i18n="profJob">الوظيفة الحالية</label>
+      <input type="text" id="profJob" class="auto-dir" list="jobSuggestions" data-i18n-ph="profJobPh" placeholder="مثال: طبيب أسنان">
+      <datalist id="jobSuggestions">
+        <option value="طبيب أسنان"></option><option value="أخصائي أسنان"></option><option value="استشاري"></option>
+        <option value="ممرض / ممرضة"></option><option value="مساعد طبيب أسنان"></option><option value="فني أسنان"></option>
+        <option value="موظف استقبال"></option><option value="إداري"></option>
+      </datalist>
+    </div>
+    <div class="field">
+      <label data-i18n="profTarget">التارجت الشهري (ر.س)</label>
+      <input type="number" inputmode="decimal" id="profTarget" placeholder="0" min="0" step="0.01">
+    </div>
+    <div class="modal-actions">
+      <button class="cancel" id="profClear" data-i18n="profClear">مسح</button>
+      <button class="save" id="profSave" data-i18n="profSave">حفظ</button>
+    </div>
+  </div>
+</div>
 
 <div class="modal-overlay" id="searchModal">
   <div class="modal-sheet">
@@ -664,6 +713,11 @@
       ghSavedToast:"تم حفظ إعدادات المزامنة", ghDisconnectedToast:"تم فصل المزامنة",
       ghSyncing:"جارِ المزامنة…", ghSynced:"تمت المزامنة", ghSyncFailed:"تعذّرت المزامنة",
       ghNotConfigured:"المزامنة غير مفعّلة", ghMerged:"تم الدمج مع GitHub بنجاح",
+      profileTitle:"بيانات الطبيب / الموظف", profileHint:"الاسم والوظيفة يظهران أعلى الشاشة وفي تقرير الطباعة وملف Excel. التارجت الشهري يعرض نسبة تحقيقك منه.",
+      profName:"الاسم", profJob:"الوظيفة الحالية", profTarget:"التارجت الشهري (ر.س)", profSave:"حفظ", profClear:"مسح",
+      profSavedToast:"تم حفظ البيانات", profNamePh:"مثال: د. عبدالوهاب العريقي", profJobPh:"مثال: طبيب أسنان",
+      targetLabel:"التارجت الشهري", targetRemaining:"المتبقي لتحقيق التارجت", targetReached:"تم تحقيق التارجت 🎯",
+      sheetSummary:"ملخص شهري", sheetMonth:"الشهر", sheetTarget:"التارجت", sheetAchieved:"نسبة التحقيق",
       ghDetect:"🔍 اكتشف ملف JSON الموجود في المشروع", ghChecking:"جارِ التحقق من الاتصال…",
       ghFound:"وُجد {n} ملف JSON — اختر الملف المناسب من القائمة", ghNoneFound:"ما لقيت أي ملف JSON في المستودع — سيُنشأ ملف جديد عند أول مزامنة",
       ghUsingFile:"تم اختيار الملف الموجود: {f}", ghConnected:"✓ متصل: {repo} · الملف: {path}",
@@ -716,6 +770,11 @@
       ghSavedToast:"Sync settings saved", ghDisconnectedToast:"Sync disconnected",
       ghSyncing:"Syncing…", ghSynced:"Synced", ghSyncFailed:"Sync failed",
       ghNotConfigured:"Sync not enabled", ghMerged:"Merged with GitHub successfully",
+      profileTitle:"Doctor / employee details", profileHint:"Name and job show at the top, on the printed report and in the Excel file. The monthly target shows how much of it you have reached.",
+      profName:"Name", profJob:"Current job title", profTarget:"Monthly target (SAR)", profSave:"Save", profClear:"Clear",
+      profSavedToast:"Details saved", profNamePh:"e.g. Dr. Abdulwahab Al-Areqi", profJobPh:"e.g. Dentist",
+      targetLabel:"Monthly target", targetRemaining:"Remaining to reach the target", targetReached:"Target reached 🎯",
+      sheetSummary:"Monthly summary", sheetMonth:"Month", sheetTarget:"Target", sheetAchieved:"Achieved",
       ghDetect:"🔍 Detect the JSON file in the project", ghChecking:"Checking connection…",
       ghFound:"Found {n} JSON file(s) — pick the right one from the list", ghNoneFound:"No JSON file found in the repo — a new one will be created on first sync",
       ghUsingFile:"Using the existing file: {f}", ghConnected:"✓ Connected: {repo} · file: {path}",
@@ -775,11 +834,12 @@
           parsed.entries = parsed.entries || {};
           parsed.settings = parsed.settings || {};
           parsed.deleted = parsed.deleted || {};
+          parsed.profile = parsed.profile || emptyProfile();
           return parsed;
         }
       }
     }catch(e){}
-    return {entries:{}, settings:{}, deleted:{}};
+    return {entries:{}, settings:{}, deleted:{}, profile:emptyProfile()};
   }
   function saveStore(){
     try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }catch(e){}
@@ -927,7 +987,7 @@
 
   /* ---- merge logic: per-entry timestamps + tombstones so edits and deletes really sync ---- */
   function entryTs(en){ return (en && typeof en.ts === "number") ? en.ts : 0; }
-  function normStore(s){ return { entries: (s && s.entries) || {}, deleted: (s && s.deleted) || {} }; }
+  function normStore(s){ return { entries: (s && s.entries) || {}, deleted: (s && s.deleted) || {}, profile: (s && s.profile) || null }; }
 
   // a = remote, b = local. On equal timestamps the local copy wins.
   function mergeStores(a, b){
@@ -958,7 +1018,14 @@
       if(deleted[id] && deleted[id] >= entryTs(item.en)) return;   // deleted after its last edit
       (entries[item.date] = entries[item.date] || []).push(item.en);
     });
-    return {entries, deleted};
+    let profile = null;
+    if(A.profile && B.profile) profile = ((A.profile.ts || 0) > (B.profile.ts || 0)) ? A.profile : B.profile;
+    else profile = B.profile || A.profile || null;
+    return {entries, deleted, profile};
+  }
+
+  function profSig(p){
+    return (p && (p.ts || p.name || p.job || Number(p.target))) ? [p.name || "", p.job || "", Number(p.target) || 0, p.ts || 0] : null;
   }
 
   function storeSig(s){
@@ -968,13 +1035,13 @@
       .sort((x,y)=> String(x.id).localeCompare(String(y.id)))
       .map(en=> [en.id, entryTs(en), en.time, en.amount, en.method, en.shift || "", en.note || ""])]);
     const del = Object.keys(n.deleted).sort().map(id=> [id, n.deleted[id]]);
-    return JSON.stringify([e, del]);
+    return JSON.stringify([e, del, profSig(n.profile)]);
   }
 
   function ghPayload(){
     return {
       app: "daily-income", version: 2, updatedAt: new Date().toISOString(),
-      entries: state.entries, deleted: state.deleted || {}, settings: {}
+      entries: state.entries, deleted: state.deleted || {}, profile: state.profile || emptyProfile(), settings: {}
     };
   }
 
@@ -986,7 +1053,9 @@
       if(storeSig(merged) !== storeSig(state)){
         state.entries = merged.entries;
         state.deleted = merged.deleted;
+        state.profile = merged.profile || state.profile || emptyProfile();
         saveStore();
+        renderProfile();
         renderDayNav(); renderEntries(); refreshNoteSuggestions();
       }
       const remoteSig = (remote.exists && remote.data) ? storeSig(remote.data) : null;
@@ -1167,6 +1236,68 @@
     }, 120000);
   }
 
+  /* ============ profile (name / job / monthly target) ============ */
+  function emptyProfile(){ return {name:"", job:"", target:0, ts:0}; }
+  function getProfile(){ return state.profile || emptyProfile(); }
+  function targetValue(){ const t = Number(getProfile().target); return t > 0 ? t : 0; }
+
+  function renderProfile(){
+    const sub = document.querySelector(".brand .sub");
+    if(!sub) return;
+    const p = getProfile();
+    const label = [p.name, p.job].filter(Boolean).join(" · ");
+    sub.textContent = label || I18N[lang].appSub;
+  }
+
+  function renderTarget(total){
+    const card = document.getElementById("targetCard");
+    const t = targetValue();
+    if(!t){ card.style.display = "none"; return; }
+    const d = I18N[lang];
+    const pct = (total / t) * 100;
+    card.style.display = "block";
+    document.getElementById("tgLabel").textContent = d.targetLabel;
+    document.getElementById("tgVal").textContent = total.toFixed(0) + " / " + t.toFixed(0) + " " + d.currency;
+    document.getElementById("tgPct").textContent = pct.toFixed(1) + "%";
+    const fill = document.getElementById("tgFill");
+    fill.style.width = Math.min(100, Math.round(pct * 10) / 10) + "%";
+    fill.style.background = pct >= 100 ? "var(--cash)" : "var(--teal)";
+    document.getElementById("tgNote").textContent = total >= t
+      ? d.targetReached + (total > t ? " (+" + (total - t).toFixed(2) + " " + d.currency + ")" : "")
+      : d.targetRemaining + ": " + (t - total).toFixed(2) + " " + d.currency;
+  }
+
+  function initProfileUI(){
+    const $ = id => document.getElementById(id);
+    const modal = $("profileModal");
+    function open(){
+      const p = getProfile();
+      $("profName").value = p.name || "";
+      $("profJob").value = p.job || "";
+      $("profTarget").value = p.target > 0 ? p.target : "";
+      modal.classList.add("show");
+      setTimeout(()=> $("profName").focus(), 150);
+    }
+    $("brandBtn").addEventListener("click", open);
+    $("brandBtn").addEventListener("keydown", e=>{ if(e.key === "Enter" || e.key === " "){ e.preventDefault(); open(); } });
+    $("profClose").addEventListener("click", ()=> modal.classList.remove("show"));
+    modal.addEventListener("click", e=>{ if(e.target === modal) modal.classList.remove("show"); });
+    function commit(p){
+      state.profile = p;
+      saveStore();
+      renderProfile();
+      renderEntries();
+      autoSyncPush();
+      modal.classList.remove("show");
+      toast(I18N[lang].profSavedToast);
+    }
+    $("profSave").addEventListener("click", ()=>{
+      const target = parseFloat($("profTarget").value);
+      commit({name: $("profName").value.trim(), job: $("profJob").value.trim(), target: target > 0 ? Math.round(target * 100) / 100 : 0, ts: Date.now()});
+    });
+    $("profClear").addEventListener("click", ()=> commit({name:"", job:"", target:0, ts: Date.now()}));
+  }
+
   /* ============ PIN lock ============ */
   const PIN_KEY = "tmc_daily_income_pin_v1";
 
@@ -1344,6 +1475,7 @@
       const key = el.getAttribute("data-i18n-ph");
       if(dict[key] !== undefined) el.placeholder = dict[key];
     });
+    renderProfile();
     renderMethods();
     renderDayNav();
     renderEntries();
@@ -1680,6 +1812,7 @@
     const monthLabel = new Intl.DateTimeFormat(locale, {month:"long", year:"numeric"}).format(new Date(y, m-1, 1));
     document.getElementById("monthTotalLabel").textContent = `${I18N[lang].monthTotalPrefix} ${monthLabel}`;
     document.getElementById("monthTotalVal").textContent = total.toFixed(2) + " " + I18N[lang].currency;
+    renderTarget(total);
     const avgEl = document.getElementById("monthTotalAvg");
     avgEl.textContent = activeDays > 0 ? `${I18N[lang].avgPerDay}: ${(total/activeDays).toFixed(2)} ${I18N[lang].currency}` : "";
     let weekTotal = 0;
@@ -1914,7 +2047,15 @@
     if(typeof XLSX === "undefined"){ toast(I18N[lang].importedErr); return; }
     const dict = I18N[lang];
     const rows = allEntriesFlat();
-    const data = [[dict.sheetDate, dict.sheetTime, dict.sheetShift, dict.sheetMethod, dict.sheetNote, dict.sheetAmount]];
+    const data = [];
+    const xp = getProfile();
+    const xWho = [xp.name, xp.job].filter(Boolean).join(" — ");
+    const xTarget = targetValue();
+    if(xWho || xTarget){
+      data.push([xWho, "", "", "", dict.targetLabel, xTarget || ""]);
+      data.push([]);
+    }
+    data.push([dict.sheetDate, dict.sheetTime, dict.sheetShift, dict.sheetMethod, dict.sheetNote, dict.sheetAmount]);
     let grand = 0;
     rows.forEach(r=>{
       grand += r.amount;
@@ -1931,6 +2072,16 @@
     ws["!cols"] = [{wch:12},{wch:8},{wch:10},{wch:12},{wch:28},{wch:12}];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, dict.sheetName.slice(0,28));
+    // second sheet: month-by-month totals against the target
+    const perMonth = {};
+    rows.forEach(r=>{ const k = r.date.slice(0,7); perMonth[k] = (perMonth[k] || 0) + r.amount; });
+    const sum = [[dict.sheetMonth, dict.sheetTotal, dict.sheetTarget, dict.sheetAchieved]];
+    Object.keys(perMonth).sort().forEach(k=>{
+      sum.push([k, perMonth[k], xTarget || "", xTarget ? Math.round((perMonth[k] / xTarget) * 1000) / 10 + "%" : ""]);
+    });
+    const ws2 = XLSX.utils.aoa_to_sheet(sum);
+    ws2["!cols"] = [{wch:12},{wch:14},{wch:12},{wch:14}];
+    XLSX.utils.book_append_sheet(wb, ws2, dict.sheetSummary.slice(0,28));
     const out = XLSX.write(wb, {bookType:"xlsx", type:"array"});
     const blob = new Blob([out], {type:"application/octet-stream"});
     await saveFile(`daily-income-${currentDate}.xlsx`, blob);
@@ -1961,7 +2112,9 @@
         const mergedImport = mergeStores(parsed, state);
         state.entries = mergedImport.entries;
         state.deleted = mergedImport.deleted;
+        state.profile = mergedImport.profile || state.profile || emptyProfile();
         saveStore();
+        renderProfile();
         renderDayNav(); renderEntries();
         refreshNoteSuggestions();
         autoSyncPush();
@@ -2027,6 +2180,9 @@
     const locale = lang==="ar" ? "ar-SA-u-ca-gregory" : "en-US-u-ca-gregory";
     let grand = 0;
     let html = "";
+    const prof = getProfile();
+    const who = [prof.name, prof.job].filter(Boolean).join(" — ");
+    const tgt = targetValue();
     monthKeys.forEach(mk=>{
       const items = byMonth[mk].slice().sort((a,b)=> (a.date+a.time).localeCompare(b.date+b.time));
       const [y,m] = mk.split("-").map(Number);
@@ -2049,7 +2205,7 @@
       grand += monthTotal;
       html += `<div class="pv-month">
         <h1 class="pv-title">${dict.printReportTitle} — ${monthLabel}</h1>
-        <p class="pv-sub">${dict.currency} · ${items.length} ${dict.entriesToday}</p>
+        <p class="pv-sub">${who ? escapeHtml(who) + " · " : ""}${dict.currency} · ${items.length} ${dict.entriesToday}</p>
         <table class="pv-table">
           <thead><tr>
             <th>${dict.sheetDate}</th><th class="num">${dict.sheetTime}</th><th>${dict.sheetShift}</th>
@@ -2059,7 +2215,7 @@
           <tfoot><tr class="pv-total-row">
             <td colspan="5">${dict.sheetTotal} — ${monthLabel}</td>
             <td class="num">${monthTotal.toFixed(2)}</td>
-          </tr></tfoot>
+          </tr>${tgt ? `<tr class="pv-total-row"><td colspan="5">${dict.targetLabel}: ${tgt.toFixed(2)}</td><td class="num">${((monthTotal / tgt) * 100).toFixed(1)}%</td></tr>` : ""}</tfoot>
         </table>
         ${mk === monthKeys[monthKeys.length-1] ? `<div class="pv-grand">${dict.printGrandTotal}: ${grand.toFixed(2)} ${dict.currency}</div>` : ""}
       </div>`;
@@ -2109,6 +2265,7 @@
     initGhUI();
     autoPullOnLoad();
     initPinUI();
+    initProfileUI();
     showLockOverlayIfNeeded();
   }
   init();
