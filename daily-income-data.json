@@ -1,7 +1,7 @@
 {
   "app": "daily-income",
   "version": 2,
-  "updatedAt": "2026-09-29T17:36:55.533Z",
+  "updatedAt": "2026-09-29T17:37:37.470Z",
   "entries": {
     "2026-09-02": [
       {
@@ -481,8 +481,8 @@
   "profile": {
     "name": "Dr. ABDULWAHAB AL-AREQI",
     "job": "Dentist",
-    "target": 0,
-    "ts": 1790682293202
+    "target": 18600,
+    "ts": 1790703453399
   },
   "settings": {}
 }
