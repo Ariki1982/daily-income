@@ -1,7 +1,7 @@
 {
   "app": "daily-income",
   "version": 2,
-  "updatedAt": "2026-09-29T17:38:51.878Z",
+  "updatedAt": "2026-09-30T03:30:23.419Z",
   "entries": {
     "2026-09-02": [
       {
@@ -478,11 +478,15 @@
     ]
   },
   "deleted": {},
-  "profile": {
-    "name": "Dr. ABDULWAHAB AL-AREQI",
-    "job": "Dentist",
-    "target": 0,
-    "ts": 1790703480351
+  "people": {
+    "_legacy": {
+      "id": "_legacy",
+      "name": "Dr. ABDULWAHAB AL-AREQI",
+      "job": "Dentist",
+      "target": 0,
+      "monthlyTargets": {},
+      "ts": 1790703480351
+    }
   },
   "settings": {}
 }
