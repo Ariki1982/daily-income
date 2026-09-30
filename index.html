@@ -13,6 +13,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
   :root{
     --bg:#F6F3EA;
@@ -341,6 +343,9 @@
     #printView{display:block !important;}
   }
   #printView{display:none;}
+  #printView.pv-capturing{
+    display:block; position:fixed; left:-9999px; top:0; width:800px; background:#fff; z-index:-1;
+  }
   .pv-month{padding:14px 6px; page-break-after:always;}
   .pv-month:last-child{page-break-after:auto;}
   .pv-title{font-size:18px; font-weight:800; margin:0 0 2px; color:#111;}
@@ -408,6 +413,29 @@
   .gh-result.err{color:var(--danger);}
   .gh-result.busy{color:var(--gold);}
   .field input.auto-dir{direction:inherit; text-align:start; unicode-bidi:plaintext;}
+  .person-row{
+    display:flex; align-items:center; gap:8px; padding:10px 4px; border-bottom:1px solid var(--line);
+  }
+  .person-row:last-of-type{border-bottom:none;}
+  .person-info{display:flex; align-items:center; gap:10px; flex:1; min-width:0; cursor:pointer; padding:2px 0;}
+  .person-radio{
+    width:18px; height:18px; border-radius:50%; border:2px solid var(--line-strong); flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .person-row.active .person-radio{border-color:var(--teal); background:var(--teal);}
+  .person-row.active .person-radio::after{content:""; width:7px; height:7px; border-radius:50%; background:#fff;}
+  .person-text{min-width:0;}
+  .person-name{font-size:14px; font-weight:800; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:block;}
+  .person-job{font-size:11.5px; color:var(--ink-dim); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:block;}
+  .person-actions{display:flex; gap:2px; flex-shrink:0;}
+  .person-actions button{border:none; background:transparent; width:30px; height:30px; border-radius:8px; font-size:14px; cursor:pointer; color:var(--ink-dim);}
+  .person-actions button:hover{background:var(--paper-2);}
+  .person-actions .p-del:hover{background:var(--danger); color:#fff;}
+  .add-person-btn{
+    width:100%; margin-top:10px; border:1px dashed var(--teal); background:var(--teal-dim); color:var(--teal);
+    border-radius:10px; padding:11px; font-family:var(--font-ui); font-size:13.5px; font-weight:700; cursor:pointer;
+  }
+  .back-link{border:none; background:transparent; color:var(--teal); font-family:var(--font-ui); font-size:13px; font-weight:700; padding:2px 0 12px; cursor:pointer;}
   .target-card{
     background:var(--paper); border:1px solid var(--line); border-radius:14px;
     padding:12px 14px 12px; margin-bottom:14px; box-shadow:var(--shadow);
@@ -551,34 +579,20 @@
 <div class="toast" id="toast"></div>
 <div id="printView"></div>
 
-<div class="modal-overlay" id="profileModal">
+<div class="modal-overlay" id="peopleModal">
   <div class="modal-sheet">
-    <button class="modal-close-x" id="profClose">✕</button>
-    <h3 data-i18n="profileTitle">بيانات الطبيب / الموظف</h3>
-    <p class="hint" data-i18n="profileHint">الاسم والوظيفة يظهران أعلى الشاشة وفي تقرير الطباعة وملف Excel. التارجت الشهري يعرض نسبة تحقيقك منه.</p>
-    <div class="field">
-      <label data-i18n="profName">الاسم</label>
-      <input type="text" id="profName" class="auto-dir" data-i18n-ph="profNamePh" placeholder="مثال: د. عبدالوهاب العريقي">
-    </div>
-    <div class="field">
-      <label data-i18n="profJob">الوظيفة الحالية</label>
-      <input type="text" id="profJob" class="auto-dir" list="jobSuggestions" data-i18n-ph="profJobPh" placeholder="مثال: طبيب أسنان">
-      <datalist id="jobSuggestions">
-        <option value="طبيب أسنان"></option><option value="أخصائي أسنان"></option><option value="استشاري"></option>
-        <option value="ممرض / ممرضة"></option><option value="مساعد طبيب أسنان"></option><option value="فني أسنان"></option>
-        <option value="موظف استقبال"></option><option value="إداري"></option>
-      </datalist>
-    </div>
-    <div class="field">
-      <label data-i18n="profTarget">التارجت الشهري (ر.س)</label>
-      <input type="number" inputmode="decimal" id="profTarget" placeholder="0" min="0" step="0.01">
-    </div>
-    <div class="modal-actions">
-      <button class="cancel" id="profClear" data-i18n="profClear">مسح</button>
-      <button class="save" id="profSave" data-i18n="profSave">حفظ</button>
-    </div>
+    <button class="modal-close-x" id="peopleClose">✕</button>
+    <h3 data-i18n="peopleTitle">من يسجّل الدخل؟</h3>
+    <p class="hint" data-i18n="peopleHint">أضف أكثر من طبيب أو موظف، لكل واحد سجله وتارجته الخاص — بما فيه تارجت مختلف لكل شهر.</p>
+    <div id="peopleBody"></div>
   </div>
 </div>
+
+<datalist id="jobSuggestions">
+  <option value="طبيب أسنان"></option><option value="أخصائي أسنان"></option><option value="استشاري"></option>
+  <option value="ممرض / ممرضة"></option><option value="مساعد طبيب أسنان"></option><option value="فني أسنان"></option>
+  <option value="موظف استقبال"></option><option value="إداري"></option>
+</datalist>
 
 <div class="modal-overlay" id="searchModal">
   <div class="modal-sheet">
@@ -731,9 +745,15 @@
       ghSyncing:"جارِ المزامنة…", ghSynced:"تمت المزامنة", ghSyncFailed:"تعذّرت المزامنة",
       ghNotConfigured:"المزامنة غير مفعّلة", ghMerged:"تم الدمج مع GitHub بنجاح",
       bnMessage:"عندك {n} حركة محفوظة على هذا الجهاز فقط — فعّل مزامنة GitHub حتى لا تضيع.", bnEnable:"تفعيل",
-      profileTitle:"بيانات الطبيب / الموظف", profileHint:"الاسم والوظيفة يظهران أعلى الشاشة وفي تقرير الطباعة وملف Excel. التارجت الشهري يعرض نسبة تحقيقك منه.",
-      profName:"الاسم", profJob:"الوظيفة الحالية", profTarget:"التارجت الشهري (ر.س)", profSave:"حفظ", profClear:"مسح",
-      profSavedToast:"تم حفظ البيانات", profNamePh:"مثال: د. عبدالوهاب العريقي", profJobPh:"مثال: طبيب أسنان",
+      peopleTitle:"من يسجّل الدخل؟", peopleHint:"أضف أكثر من طبيب أو موظف، لكل واحد سجله وتارجته الخاص — بما فيه تارجت مختلف لكل شهر.",
+      personUnnamed:"بدون اسم", personSwitchedToast:"تم التبديل إلى {name}",
+      personAdd:"+ إضافة شخص جديد", personEditTitle:"تعديل بيانات", personNewTitle:"شخص جديد",
+      profName:"الاسم", profJob:"الوظيفة الحالية", profNamePh:"مثال: د. عبدالوهاب العريقي", profJobPh:"مثال: طبيب أسنان",
+      profTarget:"التارجت الافتراضي كل شهر (ر.س)", profTargetMonth:"تارجت خاص لشهر {month} (اختياري)",
+      profTargetMonthHint:"اتركه فارغاً لاستخدام التارجت الافتراضي", profSave:"حفظ", profDelete:"حذف هذا الشخص",
+      profSavedToast:"تم حفظ البيانات", personDeletedToast:"تم حذف الشخص",
+      confirmDeletePerson:"سيُحذف هذا الشخص من القائمة، وتبقى حركاته محفوظة. متابعة؟",
+      cantDeleteLastPerson:"لازم يبقى شخص واحد على الأقل",
       targetLabel:"التارجت الشهري", targetRemaining:"المتبقي لتحقيق التارجت", targetReached:"تم تحقيق التارجت 🎯",
       sheetSummary:"ملخص شهري", sheetMonth:"الشهر", sheetTarget:"التارجت", sheetAchieved:"نسبة التحقيق",
       ghDetect:"🔍 اكتشف ملف JSON الموجود في المشروع", ghChecking:"جارِ التحقق من الاتصال…",
@@ -789,9 +809,15 @@
       ghSyncing:"Syncing…", ghSynced:"Synced", ghSyncFailed:"Sync failed",
       ghNotConfigured:"Sync not enabled", ghMerged:"Merged with GitHub successfully",
       bnMessage:"You have {n} entries saved only on this device — enable GitHub sync so they are never lost.", bnEnable:"Enable",
-      profileTitle:"Doctor / employee details", profileHint:"Name and job show at the top, on the printed report and in the Excel file. The monthly target shows how much of it you have reached.",
-      profName:"Name", profJob:"Current job title", profTarget:"Monthly target (SAR)", profSave:"Save", profClear:"Clear",
-      profSavedToast:"Details saved", profNamePh:"e.g. Dr. Abdulwahab Al-Areqi", profJobPh:"e.g. Dentist",
+      peopleTitle:"Who is logging income?", peopleHint:"Add more than one doctor or employee — each with their own log and target, including a different target per month.",
+      personUnnamed:"Unnamed", personSwitchedToast:"Switched to {name}",
+      personAdd:"+ Add a new person", personEditTitle:"Edit details", personNewTitle:"New person",
+      profName:"Name", profJob:"Current job title", profNamePh:"e.g. Dr. Abdulwahab Al-Areqi", profJobPh:"e.g. Dentist",
+      profTarget:"Default monthly target (SAR)", profTargetMonth:"Target just for {month} (optional)",
+      profTargetMonthHint:"Leave blank to use the default target", profSave:"Save", profDelete:"Delete this person",
+      profSavedToast:"Details saved", personDeletedToast:"Person deleted",
+      confirmDeletePerson:"This person will be removed from the list; their entries stay saved. Continue?",
+      cantDeleteLastPerson:"At least one person must remain",
       targetLabel:"Monthly target", targetRemaining:"Remaining to reach the target", targetReached:"Target reached 🎯",
       sheetSummary:"Monthly summary", sheetMonth:"Month", sheetTarget:"Target", sheetAchieved:"Achieved",
       ghDetect:"🔍 Detect the JSON file in the project", ghChecking:"Checking connection…",
@@ -843,6 +869,8 @@
 
   /* ============ state ============ */
   let state = loadStore();
+  let activePersonId = state.settings.activePersonId;
+  if(!activePersonId || !state.people[activePersonId]) activePersonId = Object.keys(state.people)[0];
   let lang = state.settings.lang || "ar";
   let theme = state.settings.theme || "auto";
   let currentDate = todayStr();
@@ -851,6 +879,7 @@
   let editingId = null;
   let editingDate = null;
 
+  function emptyPerson(id){ return {id, name:"", job:"", target:0, monthlyTargets:{}, ts:0}; }
   function loadStore(){
     try{
       const raw = localStorage.getItem(STORE_KEY);
@@ -860,12 +889,23 @@
           parsed.entries = parsed.entries || {};
           parsed.settings = parsed.settings || {};
           parsed.deleted = parsed.deleted || {};
-          parsed.profile = parsed.profile || emptyProfile();
+          parsed.people = parsed.people || {};
+          if(Object.keys(parsed.people).length === 0){
+            const legacy = emptyPerson("_legacy");
+            if(parsed.profile){
+              legacy.name = parsed.profile.name || "";
+              legacy.job = parsed.profile.job || "";
+              legacy.target = parsed.profile.target || 0;
+              legacy.ts = parsed.profile.ts || 0;
+            }
+            parsed.people["_legacy"] = legacy;
+          }
+          delete parsed.profile;
           return parsed;
         }
       }
     }catch(e){}
-    return {entries:{}, settings:{}, deleted:{}, profile:emptyProfile()};
+    return {entries:{}, settings:{}, deleted:{}, people:{"_legacy": emptyPerson("_legacy")}};
   }
   function saveStore(){
     try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }catch(e){}
@@ -1013,7 +1053,7 @@
 
   /* ---- merge logic: per-entry timestamps + tombstones so edits and deletes really sync ---- */
   function entryTs(en){ return (en && typeof en.ts === "number") ? en.ts : 0; }
-  function normStore(s){ return { entries: (s && s.entries) || {}, deleted: (s && s.deleted) || {}, profile: (s && s.profile) || null }; }
+  function normStore(s){ return { entries: (s && s.entries) || {}, deleted: (s && s.deleted) || {}, people: (s && s.people) || {} }; }
 
   // a = remote, b = local. On equal timestamps the local copy wins.
   function mergeStores(a, b){
@@ -1044,14 +1084,23 @@
       if(deleted[id] && deleted[id] >= entryTs(item.en)) return;   // deleted after its last edit
       (entries[item.date] = entries[item.date] || []).push(item.en);
     });
-    let profile = null;
-    if(A.profile && B.profile) profile = ((A.profile.ts || 0) > (B.profile.ts || 0)) ? A.profile : B.profile;
-    else profile = B.profile || A.profile || null;
-    return {entries, deleted, profile};
+    const people = {};
+    [A.people, B.people].forEach(pm=>{
+      Object.keys(pm || {}).forEach(pid=>{
+        const cand = pm[pid];
+        const cur = people[pid];
+        if(!cur || (cand.ts || 0) >= (cur.ts || 0)) people[pid] = cand;
+      });
+    });
+    return {entries, deleted, people};
   }
 
-  function profSig(p){
-    return (p && (p.ts || p.name || p.job || Number(p.target))) ? [p.name || "", p.job || "", Number(p.target) || 0, p.ts || 0] : null;
+  function peopleSig(people){
+    return Object.keys(people || {}).sort().map(id=>{
+      const p = people[id] || {};
+      const mt = Object.keys(p.monthlyTargets || {}).sort().map(k=> [k, Number(p.monthlyTargets[k]) || 0]);
+      return [id, p.name || "", p.job || "", Number(p.target) || 0, mt, p.ts || 0];
+    });
   }
 
   function storeSig(s){
@@ -1061,13 +1110,13 @@
       .sort((x,y)=> String(x.id).localeCompare(String(y.id)))
       .map(en=> [en.id, entryTs(en), en.time, en.amount, en.method, en.shift || "", en.note || ""])]);
     const del = Object.keys(n.deleted).sort().map(id=> [id, n.deleted[id]]);
-    return JSON.stringify([e, del, profSig(n.profile)]);
+    return JSON.stringify([e, del, peopleSig(n.people)]);
   }
 
   function ghPayload(){
     return {
       app: "daily-income", version: 2, updatedAt: new Date().toISOString(),
-      entries: state.entries, deleted: state.deleted || {}, profile: state.profile || emptyProfile(), settings: {}
+      entries: state.entries, deleted: state.deleted || {}, people: state.people || {}, settings: {}
     };
   }
 
@@ -1079,7 +1128,8 @@
       if(storeSig(merged) !== storeSig(state)){
         state.entries = merged.entries;
         state.deleted = merged.deleted;
-        state.profile = merged.profile || state.profile || emptyProfile();
+        state.people = (merged.people && Object.keys(merged.people).length) ? merged.people : state.people;
+        if(!activePersonId || !state.people[activePersonId]) activePersonId = Object.keys(state.people)[0];
         saveStore();
         renderProfile();
         renderDayNav(); renderEntries(); refreshNoteSuggestions();
@@ -1262,22 +1312,43 @@
     }, 120000);
   }
 
-  /* ============ profile (name / job / monthly target) ============ */
-  function emptyProfile(){ return {name:"", job:"", target:0, ts:0}; }
-  function getProfile(){ return state.profile || emptyProfile(); }
-  function targetValue(){ const t = Number(getProfile().target); return t > 0 ? t : 0; }
+  /* ============ people (name / job / monthly targets) ============ */
+  function personKey(en){ return en.person || "_legacy"; }
+  function getPerson(id){ return (state.people && state.people[id]) || null; }
+  function getActivePerson(){ return getPerson(activePersonId) || emptyPerson(activePersonId || "_legacy"); }
+  function targetValueFor(personId, monthKey){
+    const p = getPerson(personId);
+    if(!p) return 0;
+    if(p.monthlyTargets && p.monthlyTargets[monthKey] !== undefined && p.monthlyTargets[monthKey] !== null && p.monthlyTargets[monthKey] !== ""){
+      const v = Number(p.monthlyTargets[monthKey]);
+      return v > 0 ? v : 0;
+    }
+    const t = Number(p.target);
+    return t > 0 ? t : 0;
+  }
+  function setActivePerson(id, silent){
+    if(!state.people[id]) return;
+    activePersonId = id;
+    state.settings.activePersonId = id;
+    saveStore();
+    renderProfile();
+    renderDayNav();
+    renderEntries();
+    if(!silent) toast(I18N[lang].personSwitchedToast.replace("{name}", state.people[id].name || I18N[lang].personUnnamed));
+  }
 
   function renderProfile(){
     const sub = document.querySelector(".brand .sub");
     if(!sub) return;
-    const p = getProfile();
+    const p = getActivePerson();
     const label = [p.name, p.job].filter(Boolean).join(" · ");
     sub.textContent = label || I18N[lang].appSub;
   }
 
   function renderTarget(total){
     const card = document.getElementById("targetCard");
-    const t = targetValue();
+    const monthKey = currentDate.slice(0,7);
+    const t = targetValueFor(activePersonId, monthKey);
     if(!t){ card.style.display = "none"; return; }
     const d = I18N[lang];
     const pct = (total / t) * 100;
@@ -1313,36 +1384,156 @@
     });
   }
 
+  /* ---- people modal: a list view and an edit view, swapped inside #peopleBody ---- */
   function initProfileUI(){
     const $ = id => document.getElementById(id);
-    const modal = $("profileModal");
-    function open(){
-      const p = getProfile();
-      $("profName").value = p.name || "";
-      $("profJob").value = p.job || "";
-      $("profTarget").value = p.target > 0 ? p.target : "";
-      modal.classList.add("show");
-      setTimeout(()=> $("profName").focus(), 150);
+    const modal = $("peopleModal");
+    let mode = "list";   // "list" | "edit"
+    let editingPersonId = null;   // null while creating a new person
+
+    function peopleListHTML(){
+      const d = I18N[lang];
+      const rows = Object.keys(state.people).map(id=>{
+        const p = state.people[id];
+        const active = id === activePersonId ? " active" : "";
+        const name = escapeHtml(p.name || d.personUnnamed);
+        const job = p.job ? `<span class="person-job">${escapeHtml(p.job)}</span>` : "";
+        return `<div class="person-row${active}">
+          <div class="person-info" data-switch="${id}">
+            <span class="person-radio"></span>
+            <span class="person-text"><span class="person-name">${name}</span>${job}</span>
+          </div>
+          <span class="person-actions">
+            <button class="p-edit" data-edit="${id}">✎</button>
+            <button class="p-del" data-del="${id}">×</button>
+          </span>
+        </div>`;
+      }).join("");
+      return rows + `<button class="add-person-btn" data-newperson>${d.personAdd}</button>`;
     }
-    $("brandBtn").addEventListener("click", open);
-    $("brandBtn").addEventListener("keydown", e=>{ if(e.key === "Enter" || e.key === " "){ e.preventDefault(); open(); } });
-    $("profClose").addEventListener("click", ()=> modal.classList.remove("show"));
+
+    function personEditHTML(id){
+      const d = I18N[lang];
+      const isNew = !id;
+      const p = id ? state.people[id] : emptyPerson(null);
+      const monthKey = currentDate.slice(0,7);
+      const locale = lang === "ar" ? "ar-SA-u-ca-gregory" : "en-US-u-ca-gregory";
+      const [y,m] = monthKey.split("-").map(Number);
+      const monthLabel = new Intl.DateTimeFormat(locale, {month:"long", year:"numeric"}).format(new Date(y, m-1, 1));
+      const monthOverride = (p.monthlyTargets && p.monthlyTargets[monthKey]) || "";
+      const canDelete = !isNew && Object.keys(state.people).length > 1;
+      return `<button class="back-link" data-back>‹ ${lang==="ar" ? "رجوع للقائمة" : "Back to list"}</button>
+        <h3 style="margin:0 0 12px;">${isNew ? d.personNewTitle : d.personEditTitle}</h3>
+        <div class="field">
+          <label>${d.profName}</label>
+          <input type="text" id="pfName" class="auto-dir" placeholder="${d.profNamePh}" value="${escapeHtml(p.name||"")}">
+        </div>
+        <div class="field">
+          <label>${d.profJob}</label>
+          <input type="text" id="pfJob" class="auto-dir" list="jobSuggestions" placeholder="${d.profJobPh}" value="${escapeHtml(p.job||"")}">
+        </div>
+        <div class="field">
+          <label>${d.profTarget}</label>
+          <input type="number" inputmode="decimal" id="pfTarget" min="0" step="0.01" placeholder="0" value="${p.target>0?p.target:""}">
+        </div>
+        <div class="field">
+          <label>${d.profTargetMonth.replace("{month}", monthLabel)}</label>
+          <input type="number" inputmode="decimal" id="pfTargetMonth" min="0" step="0.01" placeholder="${d.profTargetMonthHint}" value="${monthOverride||""}">
+        </div>
+        <div class="modal-actions">
+          ${canDelete ? `<button class="cancel" data-delete-edit="${id}">${d.profDelete}</button>` : ""}
+          <button class="save" data-save-edit="${isNew ? "" : id}">${d.profSave}</button>
+        </div>`;
+    }
+
+    function render(){
+      $("peopleBody").innerHTML = mode === "list" ? peopleListHTML() : personEditHTML(editingPersonId);
+      if(mode === "edit") setTimeout(()=> $("pfName") && $("pfName").focus(), 100);
+    }
+
+    function openList(){ mode = "list"; render(); modal.classList.add("show"); }
+    $("brandBtn").addEventListener("click", openList);
+    $("brandBtn").addEventListener("keydown", e=>{ if(e.key === "Enter" || e.key === " "){ e.preventDefault(); openList(); } });
+    $("peopleClose").addEventListener("click", ()=> modal.classList.remove("show"));
     modal.addEventListener("click", e=>{ if(e.target === modal) modal.classList.remove("show"); });
-    function commit(p){
-      state.profile = p;
-      saveStore();
-      renderProfile();
-      renderEntries();
-      renderBackupNudge();
-      autoSyncPush();
-      modal.classList.remove("show");
-      toast(I18N[lang].profSavedToast);
-    }
-    $("profSave").addEventListener("click", ()=>{
-      const target = parseFloat($("profTarget").value);
-      commit({name: $("profName").value.trim(), job: $("profJob").value.trim(), target: target > 0 ? Math.round(target * 100) / 100 : 0, ts: Date.now()});
+
+    $("peopleBody").addEventListener("click", (e)=>{
+      const sw = e.target.closest("[data-switch]");
+      const ed = e.target.closest("[data-edit]");
+      const del = e.target.closest("[data-del]");
+      const back = e.target.closest("[data-back]");
+      const add = e.target.closest("[data-newperson]");
+      const save = e.target.closest("[data-save-edit]");
+      const delEdit = e.target.closest("[data-delete-edit]");
+
+      if(sw){ setActivePerson(sw.getAttribute("data-switch")); modal.classList.remove("show"); return; }
+      if(ed){ editingPersonId = ed.getAttribute("data-edit"); mode = "edit"; render(); return; }
+      if(add){ editingPersonId = null; mode = "edit"; render(); return; }
+      if(back){ mode = "list"; render(); return; }
+
+      if(del){
+        const id = del.getAttribute("data-del");
+        if(Object.keys(state.people).length <= 1){ toast(I18N[lang].cantDeleteLastPerson); return; }
+        if(!confirm(I18N[lang].confirmDeletePerson)) return;
+        delete state.people[id];
+        if(activePersonId === id) activePersonId = Object.keys(state.people)[0];
+        state.settings.activePersonId = activePersonId;
+        saveStore();
+        renderProfile(); renderDayNav(); renderEntries(); renderBackupNudge();
+        autoSyncPush();
+        toast(I18N[lang].personDeletedToast);
+        render();
+        return;
+      }
+
+      if(delEdit){
+        const id = delEdit.getAttribute("data-delete-edit");
+        if(Object.keys(state.people).length <= 1){ toast(I18N[lang].cantDeleteLastPerson); return; }
+        if(!confirm(I18N[lang].confirmDeletePerson)) return;
+        delete state.people[id];
+        if(activePersonId === id) activePersonId = Object.keys(state.people)[0];
+        state.settings.activePersonId = activePersonId;
+        saveStore();
+        renderProfile(); renderDayNav(); renderEntries(); renderBackupNudge();
+        autoSyncPush();
+        toast(I18N[lang].personDeletedToast);
+        mode = "list"; render();
+        return;
+      }
+
+      if(save){
+        const rawId = save.getAttribute("data-save-edit");
+        const isNewPerson = !rawId;
+        const id = rawId || ("p_" + Date.now() + "_" + Math.random().toString(36).slice(2,6));
+        const name = $("pfName").value.trim();
+        const job = $("pfJob").value.trim();
+        const targetRaw = parseFloat($("pfTarget").value);
+        const monthRaw = $("pfTargetMonth").value.trim();
+        const monthKey = currentDate.slice(0,7);
+        const existing = state.people[id] || emptyPerson(id);
+        const monthlyTargets = Object.assign({}, existing.monthlyTargets || {});
+        if(monthRaw === "") delete monthlyTargets[monthKey];
+        else{
+          const mv = parseFloat(monthRaw);
+          if(mv > 0) monthlyTargets[monthKey] = Math.round(mv * 100) / 100;
+          else delete monthlyTargets[monthKey];
+        }
+        state.people[id] = {
+          id, name, job,
+          target: targetRaw > 0 ? Math.round(targetRaw * 100) / 100 : 0,
+          monthlyTargets, ts: Date.now()
+        };
+        if(isNewPerson) activePersonId = id;
+        else if(!activePersonId || !state.people[activePersonId]) activePersonId = id;
+        state.settings.activePersonId = activePersonId;
+        saveStore();
+        renderProfile(); renderDayNav(); renderEntries(); renderBackupNudge();
+        autoSyncPush();
+        toast(I18N[lang].profSavedToast);
+        mode = "list"; render();
+        return;
+      }
     });
-    $("profClear").addEventListener("click", ()=> commit({name:"", job:"", target:0, ts: Date.now()}));
   }
 
   /* ============ PIN lock ============ */
@@ -1691,7 +1882,7 @@
 
   /* ============ entries CRUD ============ */
   function getDayEntries(dateStr){
-    return state.entries[dateStr] || [];
+    return (state.entries[dateStr] || []).filter(en=> personKey(en) === activePersonId);
   }
   function addEntry(){
     if(document.getElementById("addBtn").disabled) return;
@@ -1730,6 +1921,7 @@
       method: selectedMethod,
       shift: currentShift,
       note: note,
+      person: activePersonId,
       ts: Date.now()
     };
     if(!state.entries[currentDate]) state.entries[currentDate] = [];
@@ -1854,7 +2046,7 @@
     let activeDays = 0;
     Object.keys(state.entries).forEach(date=>{
       if(date.slice(0,7) === monthKey){
-        const dayEntries = state.entries[date] || [];
+        const dayEntries = (state.entries[date] || []).filter(en=> personKey(en) === activePersonId);
         if(dayEntries.length > 0) activeDays++;
         dayEntries.forEach(en=> total += en.amount);
       }
@@ -1870,7 +2062,7 @@
     let weekTotal = 0;
     for(let i=0;i<7;i++){
       const d = shiftDate(currentDate, -i);
-      (state.entries[d] || []).forEach(en=> weekTotal += en.amount);
+      (state.entries[d] || []).filter(en=> personKey(en) === activePersonId).forEach(en=> weekTotal += en.amount);
     }
     document.getElementById("weekTotalLine").textContent = `${I18N[lang].last7days}: ${fmtMoney(weekTotal)} ${I18N[lang].currency}`;
     renderTrend();
@@ -1882,7 +2074,7 @@
   function monthTotalFor(monthKey){
     let t = 0;
     Object.keys(state.entries).forEach(d=>{
-      if(d.slice(0,7) === monthKey) (state.entries[d] || []).forEach(en=> t += en.amount);
+      if(d.slice(0,7) === monthKey) (state.entries[d] || []).filter(en=> personKey(en) === activePersonId).forEach(en=> t += en.amount);
     });
     return t;
   }
@@ -1919,7 +2111,7 @@
     METHODS.forEach(m=> byMethod[m.id] = 0);
     Object.keys(state.entries).forEach(d=>{
       if(d.slice(0,7) === monthKey){
-        (state.entries[d] || []).forEach(en=> byMethod[en.method] = (byMethod[en.method]||0) + en.amount);
+        (state.entries[d] || []).filter(en=> personKey(en) === activePersonId).forEach(en=> byMethod[en.method] = (byMethod[en.method]||0) + en.amount);
       }
     });
     const bd = document.getElementById("monthBreakdownRow");
@@ -1941,7 +2133,7 @@
     SHIFTS.forEach(s=> byShift[s.id] = 0);
     Object.keys(state.entries).forEach(d=>{
       if(d.slice(0,7) === monthKey){
-        (state.entries[d] || []).forEach(en=>{
+        (state.entries[d] || []).filter(en=> personKey(en) === activePersonId).forEach(en=>{
           if(en.shift && Object.prototype.hasOwnProperty.call(byShift, en.shift)) byShift[en.shift] += en.amount;
         });
       }
@@ -2026,7 +2218,7 @@
     resEl.innerHTML = "";
     if(q.length === 0) return;
     const dict = I18N[lang];
-    const matches = allEntriesFlat().filter(r=>{
+    const matches = allEntriesFlat(activePersonId).filter(r=>{
       return (r.note && r.note.toLowerCase().includes(q)) ||
              String(r.amount).includes(q) ||
              r.date.includes(q);
@@ -2082,10 +2274,12 @@
     return true;
   }
 
-  function allEntriesFlat(){
+  function allEntriesFlat(personId){
     const rows = [];
     Object.keys(state.entries).sort().forEach(date=>{
-      (state.entries[date]||[]).forEach(e=> rows.push(Object.assign({date}, e)));
+      (state.entries[date]||[]).forEach(e=>{
+        if(!personId || personKey(e) === personId) rows.push(Object.assign({date}, e));
+      });
     });
     return rows;
   }
@@ -2099,13 +2293,13 @@
   document.getElementById("exportXlsxBtn").addEventListener("click", async ()=>{
     if(typeof XLSX === "undefined"){ toast(I18N[lang].importedErr); return; }
     const dict = I18N[lang];
-    const rows = allEntriesFlat();
+    const rows = allEntriesFlat(activePersonId);
     const data = [];
-    const xp = getProfile();
+    const xp = getActivePerson();
     const xWho = [xp.name, xp.job].filter(Boolean).join(" — ");
-    const xTarget = targetValue();
-    if(xWho || xTarget){
-      data.push([xWho, "", "", "", dict.targetLabel, xTarget || ""]);
+    const xDefaultTarget = Number(xp.target) || 0;
+    if(xWho || xDefaultTarget){
+      data.push([xWho, "", "", "", dict.targetLabel, xDefaultTarget || ""]);
       data.push([]);
     }
     data.push([dict.sheetDate, dict.sheetTime, dict.sheetShift, dict.sheetMethod, dict.sheetNote, dict.sheetAmount]);
@@ -2130,7 +2324,8 @@
     rows.forEach(r=>{ const k = r.date.slice(0,7); perMonth[k] = (perMonth[k] || 0) + r.amount; });
     const sum = [[dict.sheetMonth, dict.sheetTotal, dict.sheetTarget, dict.sheetAchieved]];
     Object.keys(perMonth).sort().forEach(k=>{
-      sum.push([k, perMonth[k], xTarget || "", xTarget ? Math.round((perMonth[k] / xTarget) * 1000) / 10 + "%" : ""]);
+      const mt = targetValueFor(activePersonId, k);
+      sum.push([k, perMonth[k], mt || "", mt ? Math.round((perMonth[k] / mt) * 1000) / 10 + "%" : ""]);
     });
     const ws2 = XLSX.utils.aoa_to_sheet(sum);
     ws2["!cols"] = [{wch:12},{wch:14},{wch:12},{wch:14}];
@@ -2165,7 +2360,8 @@
         const mergedImport = mergeStores(parsed, state);
         state.entries = mergedImport.entries;
         state.deleted = mergedImport.deleted;
-        state.profile = mergedImport.profile || state.profile || emptyProfile();
+        state.people = (mergedImport.people && Object.keys(mergedImport.people).length) ? mergedImport.people : state.people;
+        if(!activePersonId || !state.people[activePersonId]) activePersonId = Object.keys(state.people)[0];
         saveStore();
         renderProfile();
         renderDayNav(); renderEntries();
@@ -2217,7 +2413,7 @@
 
   function buildPrintView(){
     const dict = I18N[lang];
-    const rows = allEntriesFlat(); // {date, time, shift, method, note, amount, ...}
+    const rows = allEntriesFlat(activePersonId); // {date, time, shift, method, note, amount, ...}
     const container = document.getElementById("printView");
     if(rows.length === 0){
       container.innerHTML = `<div class="pv-month"><p class="pv-sub">${dict.printNoData}</p></div>`;
@@ -2233,10 +2429,10 @@
     const locale = lang==="ar" ? "ar-SA-u-ca-gregory" : "en-US-u-ca-gregory";
     let grand = 0;
     let html = "";
-    const prof = getProfile();
+    const prof = getActivePerson();
     const who = [prof.name, prof.job].filter(Boolean).join(" — ");
-    const tgt = targetValue();
     monthKeys.forEach(mk=>{
+      const tgt = targetValueFor(activePersonId, mk);
       const items = byMonth[mk].slice().sort((a,b)=> (a.date+a.time).localeCompare(b.date+b.time));
       const [y,m] = mk.split("-").map(Number);
       const monthLabel = new Intl.DateTimeFormat(locale, {month:"long", year:"numeric"}).format(new Date(y, m-1, 1));
@@ -2275,10 +2471,59 @@
     });
     container.innerHTML = html;
   }
-  document.getElementById("printBtn").addEventListener("click", ()=>{
+  async function sharePdfReport(){
+    const container = document.getElementById("printView");
+    const months = Array.from(container.querySelectorAll(".pv-month"));
+    if(months.length === 0) return false;   // buildPrintView() already showed the "no data" message
+    if(typeof html2canvas === "undefined" || !window.jspdf) return false;   // libraries didn't load (offline?)
+
+    container.classList.add("pv-capturing");
+    await new Promise(r=> requestAnimationFrame(()=> requestAnimationFrame(r)));
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({unit:"pt", format:"a4"});
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+    const margin = 20;
+
+    try{
+      for(let i=0; i<months.length; i++){
+        const canvas = await html2canvas(months[i], {scale:2, backgroundColor:"#ffffff", useCORS:true});
+        const imgData = canvas.toDataURL("image/jpeg", 0.92);
+        let imgW = pageW - margin*2;
+        let imgH = canvas.height * (imgW / canvas.width);
+        if(imgH > pageH - margin*2){
+          imgH = pageH - margin*2;
+          imgW = canvas.width * (imgH / canvas.height);
+        }
+        if(i > 0) doc.addPage();
+        doc.addImage(imgData, "JPEG", (pageW - imgW)/2, margin, imgW, imgH);
+      }
+    } finally {
+      container.classList.remove("pv-capturing");
+    }
+
+    const blob = doc.output("blob");
+    const fileName = "daily-income-report-" + todayStr() + ".pdf";
+    try{
+      const file = new File([blob], fileName, {type:"application/pdf"});
+      if(navigator.canShare && navigator.canShare({files:[file]})){
+        await navigator.share({files:[file], title: I18N[lang].printReportTitle});
+        return true;
+      }
+    }catch(e){
+      if(e && e.name === "AbortError") return true;   // the person cancelled the share sheet — not an error
+    }
+    await saveFile(fileName, blob);
+    return true;
+  }
+
+  document.getElementById("printBtn").addEventListener("click", async ()=>{
     buildPrintView();
     if(isIOSStandalone()){
-      openPrintInRealSafari();
+      let ok = false;
+      try{ ok = await sharePdfReport(); }catch(e){ ok = false; }
+      if(!ok) openPrintInRealSafari();
     } else {
       window.print();
     }
