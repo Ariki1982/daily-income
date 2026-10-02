@@ -1,7 +1,7 @@
 {
   "app": "daily-income",
   "version": 2,
-  "updatedAt": "2026-10-02T15:06:56.556Z",
+  "updatedAt": "2026-10-02T15:07:28.697Z",
   "entries": {
     "2026-09-02": [
       {
@@ -587,9 +587,9 @@
         "amount": 270,
         "method": "card",
         "shift": "callout",
-        "note": "",
+        "note": "طوارئ واستدعاء",
         "person": "_legacy",
-        "ts": 1790953614802
+        "ts": 1790953647133
       }
     ]
   },
