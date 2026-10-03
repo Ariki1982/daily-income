@@ -1,7 +1,7 @@
 {
   "app": "daily-income",
   "version": 2,
-  "updatedAt": "2026-10-03T17:55:52.181Z",
+  "updatedAt": "2026-10-03T19:14:45.938Z",
   "entries": {
     "2026-09-02": [
       {
@@ -660,8 +660,10 @@
       "name": "د.اماني عثمان",
       "job": "Dentist",
       "target": 0,
-      "monthlyTargets": {},
-      "ts": 1790953677632
+      "monthlyTargets": {
+        "2026-10": 20000
+      },
+      "ts": 1791054883852
     }
   },
   "settings": {}
