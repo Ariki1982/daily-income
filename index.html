@@ -168,6 +168,19 @@
   .month-total .mt-arrow:hover{background:var(--gold-dim);}
   .month-total .mt-arrow:active{transform:scale(.92);}
 
+  .insights-wrap{margin-bottom:14px;}
+  .insights-toggle{
+    width:100%; display:flex; align-items:center; justify-content:space-between;
+    background:linear-gradient(135deg, var(--teal-dim), var(--gold-dim));
+    border:1px solid var(--line-strong); border-radius:12px; padding:12px 14px;
+    cursor:pointer; font-family:var(--font-ui);
+  }
+  .insights-toggle-label{font-size:13.5px; font-weight:800; color:var(--ink);}
+  .insights-chevron{font-size:12px; color:var(--ink-dim); transition:transform .25s ease;}
+  .insights-chevron.open{transform:rotate(180deg);}
+  .insights-body{max-height:0; overflow:hidden; transition:max-height .3s ease;}
+  .insights-body-inner{padding-top:12px;}
+
   .trend-card{
     background:var(--paper); border:1px solid var(--line); border-radius:14px;
     padding:14px 14px 10px; margin-bottom:14px; box-shadow:var(--shadow);
@@ -309,9 +322,16 @@
     background:var(--paper-2); border:1px solid var(--line); border-radius:999px; padding:4px 10px;
     font-family:var(--font-num); direction:ltr;
   }
-  .total-row{display:flex; align-items:center; justify-content:space-between;}
-  .total-row .lbl{font-size:13.5px; font-weight:700; color:var(--ink-dim);}
-  .total-row .val{font-family:var(--font-num); font-size:28px; font-weight:800; color:var(--gold); direction:ltr;}
+  .tb-handle{
+    width:100%; display:flex; align-items:baseline; justify-content:center; gap:9px;
+    background:transparent; border:none; padding:4px 0 2px; cursor:pointer; font-family:var(--font-ui);
+  }
+  .tb-handle-label{font-size:12.5px; font-weight:700; color:var(--ink-dim);}
+  .tb-handle-val{font-family:var(--font-num); font-size:24px; font-weight:800; color:var(--gold); direction:ltr;}
+  .tb-chevron{font-size:11px; color:var(--ink-dim); transition:transform .25s ease; align-self:center;}
+  .tb-chevron.open{transform:rotate(180deg);}
+  .tb-expand{max-height:0; overflow:hidden; transition:max-height .28s ease;}
+  .tb-expand-inner{padding-top:8px;}
   .toolbtns{display:flex; gap:6px; margin-top:9px;}
   .toolbtns button{
     flex:1; border:1px solid var(--line); background:var(--paper-2); color:var(--ink);
@@ -506,34 +526,6 @@
     </span>
   </div>
 
-  <div class="month-total" id="monthTotalRow">
-    <button class="mt-arrow" id="prevMonth">‹</button>
-    <span class="mt-mid">
-      <span class="mt-label" id="monthTotalLabel">—</span>
-      <span class="mt-val" id="monthTotalVal">0.00</span>
-      <span class="mt-avg" id="monthTotalAvg"></span>
-      <span class="mt-avg" id="weekTotalLine"></span>
-    </span>
-    <button class="mt-arrow" id="nextMonth">›</button>
-  </div>
-
-  <div class="target-card" id="targetCard" style="display:none;">
-    <div class="tg-top">
-      <span class="tg-label" id="tgLabel">التارجت الشهري</span>
-      <span class="tg-right"><span class="tg-val" id="tgVal"></span><span class="sc-pct" id="tgPct"></span></span>
-    </div>
-    <div class="sc-track"><div class="sc-fill" id="tgFill"></div></div>
-    <div class="tg-note" id="tgNote"></div>
-  </div>
-
-  <div class="trend-card" id="trendCard">
-    <div class="trend-head"><span class="trend-title" data-i18n="trendTitle">الاتجاه الشهري (آخر 6 أشهر)</span></div>
-    <svg id="trendSvg" viewBox="0 0 300 90" preserveAspectRatio="none"></svg>
-    <div class="breakdown" id="monthBreakdownRow" style="margin-top:8px;"></div>
-    <div class="trend-head" style="margin-top:14px;"><span class="trend-title" data-i18n="shiftCompareTitle">مقارنة الدوامات (هذا الشهر)</span></div>
-    <div id="shiftCompare" class="shift-compare"></div>
-  </div>
-
   <div class="card" id="entryFormCard">
     <div class="edit-banner" id="editBanner" style="display:none;">
       <span data-i18n="editingBanner">تعديل حركة موجودة</span>
@@ -557,21 +549,64 @@
   </div>
   <div id="entryList"></div>
 
+  <div class="insights-wrap">
+    <button class="insights-toggle" id="insightsToggle" type="button">
+      <span class="insights-toggle-label">📊 <span data-i18n="insightsTitle">الإحصائيات والتحليلات</span></span>
+      <span class="insights-chevron" id="insightsChevron">▾</span>
+    </button>
+    <div class="insights-body" id="insightsBody">
+      <div class="insights-body-inner">
+        <div class="month-total" id="monthTotalRow">
+          <button class="mt-arrow" id="prevMonth">‹</button>
+          <span class="mt-mid">
+            <span class="mt-label" id="monthTotalLabel">—</span>
+            <span class="mt-val" id="monthTotalVal">0.00</span>
+            <span class="mt-avg" id="monthTotalAvg"></span>
+            <span class="mt-avg" id="weekTotalLine"></span>
+          </span>
+          <button class="mt-arrow" id="nextMonth">›</button>
+        </div>
+
+        <div class="target-card" id="targetCard" style="display:none;">
+          <div class="tg-top">
+            <span class="tg-label" id="tgLabel">التارجت الشهري</span>
+            <span class="tg-right"><span class="tg-val" id="tgVal"></span><span class="sc-pct" id="tgPct"></span></span>
+          </div>
+          <div class="sc-track"><div class="sc-fill" id="tgFill"></div></div>
+          <div class="tg-note" id="tgNote"></div>
+        </div>
+
+        <div class="trend-card" id="trendCard">
+          <div class="trend-head"><span class="trend-title" data-i18n="trendTitle">الاتجاه الشهري (آخر 6 أشهر)</span></div>
+          <svg id="trendSvg" viewBox="0 0 300 90" preserveAspectRatio="none"></svg>
+          <div class="breakdown" id="monthBreakdownRow" style="margin-top:8px;"></div>
+          <div class="trend-head" style="margin-top:14px;"><span class="trend-title" data-i18n="shiftCompareTitle">مقارنة الدوامات (هذا الشهر)</span></div>
+          <div id="shiftCompare" class="shift-compare"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <div class="totalbar" id="totalbar">
   <div class="totalbar-inner">
-    <div class="breakdown" id="breakdownRow"></div>
-    <div class="total-row">
-      <span class="lbl" data-i18n="total">الإجمالي</span>
-      <span class="val" id="totalVal">0.00</span>
-    </div>
-    <div class="toolbtns">
-      <button id="exportJsonBtn">📄<span data-i18n="expJson">JSON</span></button>
-      <button id="exportXlsxBtn">📊<span data-i18n="expXlsx">Excel</span></button>
-      <button id="importBtn">📥<span data-i18n="impFile">استيراد</span></button>
-      <button id="printBtn">🖨️<span data-i18n="printBtn">طباعة</span></button>
-      <button id="searchBtn">🔍<span data-i18n="searchBtn">بحث</span></button>
+    <button class="tb-handle" id="tbHandle" type="button">
+      <span class="tb-chevron" id="tbChevron">▴</span>
+      <span class="tb-handle-label" data-i18n="total">الإجمالي</span>
+      <span class="tb-handle-val" id="totalVal">0.00</span>
+    </button>
+    <div class="tb-expand" id="tbExpand">
+      <div class="tb-expand-inner">
+        <div class="breakdown" id="breakdownRow"></div>
+        <div class="toolbtns">
+          <button id="exportJsonBtn">📄<span data-i18n="expJson">JSON</span></button>
+          <button id="exportXlsxBtn">📊<span data-i18n="expXlsx">Excel</span></button>
+          <button id="importBtn">📥<span data-i18n="impFile">استيراد</span></button>
+          <button id="printBtn">🖨️<span data-i18n="printBtn">طباعة</span></button>
+          <button id="searchBtn">🔍<span data-i18n="searchBtn">بحث</span></button>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -765,7 +800,7 @@
       printReportTitle:"تقرير الدخل الشهري", printGrandTotal:"الإجمالي الكلي لكل الفترة", printNoData:"لا توجد أي بيانات مسجلة للطباعة",
       printOpeningSafari:"يفتح تقرير الطباعة في Safari لأن الطباعة غير مدعومة داخل تطبيق الشاشة الرئيسية",
       monthTotalPrefix:"إجمالي",
-      undoBtn:"تراجع", avgPerDay:"متوسط اليوم", trendTitle:"الاتجاه الشهري (آخر 6 أشهر)", last7days:"آخر 7 أيام", shiftCompareTitle:"مقارنة الدوامات (هذا الشهر)",
+      undoBtn:"تراجع", avgPerDay:"متوسط اليوم", trendTitle:"الاتجاه الشهري (آخر 6 أشهر)", last7days:"آخر 7 أيام", shiftCompareTitle:"مقارنة الدوامات (هذا الشهر)", insightsTitle:"الإحصائيات والتحليلات",
       editingBanner:"تعديل حركة موجودة", cancelEdit:"إلغاء", saveEdit:"حفظ التعديل", savedEditToast:"تم حفظ التعديل",
       lockTitle:"قفل بكود PIN", lockHint:"كود مكوّن من 4 أرقام يُطلب عند فتح الأداة. يُحفظ مشفّراً في هذا الجهاز فقط.",
       pinNew:"الكود الجديد (4 أرقام)", pinConfirm:"تأكيد الكود", pinSave:"حفظ", pinRemove:"إزالة القفل",
@@ -829,7 +864,7 @@
       printReportTitle:"Monthly Income Report", printGrandTotal:"Grand total for the whole period", printNoData:"No data recorded to print",
       printOpeningSafari:"Opening the print report in Safari — printing isn't supported inside the home-screen app",
       monthTotalPrefix:"Total for",
-      undoBtn:"Undo", avgPerDay:"Daily average", trendTitle:"Monthly trend (last 6 months)", last7days:"Last 7 days", shiftCompareTitle:"Shift comparison (this month)",
+      undoBtn:"Undo", avgPerDay:"Daily average", trendTitle:"Monthly trend (last 6 months)", last7days:"Last 7 days", shiftCompareTitle:"Shift comparison (this month)", insightsTitle:"Stats & Insights",
       editingBanner:"Editing existing entry", cancelEdit:"Cancel", saveEdit:"Save changes", savedEditToast:"Changes saved",
       lockTitle:"PIN lock", lockHint:"A 4-digit code required to open the tool. Stored hashed on this device only.",
       pinNew:"New code (4 digits)", pinConfirm:"Confirm code", pinSave:"Save", pinRemove:"Remove lock",
@@ -2069,6 +2104,7 @@
     renderMonthBreakdown();
     renderShiftCompare();
     renderBackupNudge();
+    if(insightsCollapse) insightsCollapse.refreshHeight();
   }
 
   function monthTotalFor(monthKey){
@@ -2194,6 +2230,7 @@
         bd.appendChild(chip);
       }
     });
+    if(totalbarCollapse) totalbarCollapse.refreshHeight();
   }
 
   function escapeHtml(s){
@@ -2530,6 +2567,43 @@
   });
 
   /* ============ keep list clear of the sticky total bar ============ */
+  /* ============ collapsible sections (Insights panel + bottom total bar) ============ */
+  function makeCollapsible(toggleBtn, bodyEl, chevronEl, storageKey, defaultOpen){
+    let open = defaultOpen;
+    try{
+      const saved = localStorage.getItem(storageKey);
+      if(saved !== null) open = saved === "1";
+    }catch(e){}
+    function apply(){
+      if(open){
+        bodyEl.style.maxHeight = bodyEl.scrollHeight + "px";
+        chevronEl.classList.add("open");
+      } else {
+        bodyEl.style.maxHeight = "0px";
+        chevronEl.classList.remove("open");
+      }
+    }
+    apply();
+    toggleBtn.addEventListener("click", ()=>{
+      open = !open;
+      try{ localStorage.setItem(storageKey, open ? "1" : "0"); }catch(e){}
+      apply();
+    });
+    return { refreshHeight(){ if(open) bodyEl.style.maxHeight = bodyEl.scrollHeight + "px"; } };
+  }
+  let insightsCollapse = null;
+  let totalbarCollapse = null;
+  function initCollapsibles(){
+    insightsCollapse = makeCollapsible(
+      document.getElementById("insightsToggle"), document.getElementById("insightsBody"),
+      document.getElementById("insightsChevron"), "tmc_daily_income_insights_open", false
+    );
+    totalbarCollapse = makeCollapsible(
+      document.getElementById("tbHandle"), document.getElementById("tbExpand"),
+      document.getElementById("tbChevron"), "tmc_daily_income_tb_open", false
+    );
+  }
+
   function watchTotalbarHeight(){
     const bar = document.getElementById("totalbar");
     if(!bar) return;
@@ -2560,6 +2634,7 @@
     setInterval(tickClock, 1000);
     initDownloads();
     watchTotalbarHeight();
+    initCollapsibles();
     initGhUI();
     autoPullOnLoad();
     initPinUI();
