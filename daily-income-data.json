@@ -1,7 +1,7 @@
 {
   "app": "daily-income",
   "version": 2,
-  "updatedAt": "2026-10-02T15:08:26.292Z",
+  "updatedAt": "2026-10-03T08:29:42.052Z",
   "entries": {
     "2026-09-02": [
       {
@@ -600,6 +600,18 @@
         "note": "طوارئ واستدعاء",
         "person": "_legacy",
         "ts": 1790953647133
+      }
+    ],
+    "2026-10-03": [
+      {
+        "id": "1791016179946_8eqyo",
+        "time": "11:29",
+        "amount": 225,
+        "method": "cash",
+        "shift": "morning",
+        "note": "",
+        "person": "_legacy",
+        "ts": 1791016179946
       }
     ]
   },
