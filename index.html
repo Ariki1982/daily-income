@@ -88,6 +88,33 @@
     padding:16px 16px calc(var(--totalbar-h, 150px) + 16px + env(safe-area-inset-bottom,0px));
   }
 
+  @media (min-width: 880px){
+    .wrap{
+      max-width:1080px;
+      display:grid;
+      grid-template-columns: 1fr 360px;
+      grid-template-areas:
+        "topbar topbar"
+        "clock insights"
+        "daynav insights"
+        "nudge insights"
+        "form insights"
+        "ledgerhead insights"
+        "entrylist insights";
+      column-gap:22px;
+      align-items:start;
+    }
+    .topbar{grid-area:topbar;}
+    .clock-card{grid-area:clock; margin-bottom:0;}
+    .daynav{grid-area:daynav; margin:14px 0 0;}
+    .backup-nudge{grid-area:nudge;}
+    #entryFormCard{grid-area:form;}
+    .ledger-head{grid-area:ledgerhead;}
+    #entryList{grid-area:entrylist;}
+    .insights-wrap{grid-area:insights; position:sticky; top:16px; margin-bottom:0;}
+    .totalbar{left:50%; right:auto; transform:translateX(-50%); max-width:1080px; width:100%;}
+  }
+
   /* ---------- Top bar ---------- */
   .topbar{
     position:sticky; top:0; z-index:20;
@@ -480,15 +507,15 @@
 <div class="wrap">
 
   <div class="topbar">
-    <div class="brand" id="brandBtn" role="button" tabindex="0">
+    <div class="brand" id="brandBtn" role="button" tabindex="0" aria-label="من يسجّل الدخل؟ / Who is logging income?">
       <span class="title" data-i18n="appTitle">دخل اليوم</span>
       <span class="sub" data-i18n="appSub">تسجيل دخل نهاية الدوام</span>
     </div>
     <div class="iconrow">
-      <button class="iconbtn" id="lockBtn" title="Lock">🔒</button>
-      <button class="iconbtn" id="ghBtn" title="GitHub Sync">☁️</button>
-      <button class="iconbtn" id="langBtn" title="Language">AR</button>
-      <button class="iconbtn" id="themeBtn" title="Theme">🌙</button>
+      <button class="iconbtn" id="lockBtn" title="Lock" aria-label="قفل PIN / PIN lock">🔒</button>
+      <button class="iconbtn" id="ghBtn" title="GitHub Sync" aria-label="مزامنة GitHub / GitHub sync">☁️</button>
+      <button class="iconbtn" id="langBtn" title="Language" aria-label="تبديل اللغة / Switch language">AR</button>
+      <button class="iconbtn" id="themeBtn" title="Theme" aria-label="تبديل المظهر / Switch theme">🌙</button>
     </div>
   </div>
 
@@ -509,12 +536,12 @@
   </div>
 
   <div class="daynav">
-    <button id="prevDay">‹</button>
+    <button id="prevDay" aria-label="اليوم السابق / Previous day">‹</button>
     <div class="daylabel">
       <span id="dayLabelMain">—</span>
       <small id="dayLabelSub" data-i18n="tapToPick">اضغط لاختيار تاريخ آخر</small>
     </div>
-    <button id="nextDay">›</button>
+    <button id="nextDay" aria-label="اليوم التالي / Next day">›</button>
     <input type="date" id="datePicker">
   </div>
 
@@ -550,21 +577,21 @@
   <div id="entryList"></div>
 
   <div class="insights-wrap">
-    <button class="insights-toggle" id="insightsToggle" type="button">
+    <button class="insights-toggle" id="insightsToggle" type="button" aria-expanded="false" aria-controls="insightsBody">
       <span class="insights-toggle-label">📊 <span data-i18n="insightsTitle">الإحصائيات والتحليلات</span></span>
       <span class="insights-chevron" id="insightsChevron">▾</span>
     </button>
     <div class="insights-body" id="insightsBody">
       <div class="insights-body-inner">
         <div class="month-total" id="monthTotalRow">
-          <button class="mt-arrow" id="prevMonth">‹</button>
+          <button class="mt-arrow" id="prevMonth" aria-label="الشهر السابق / Previous month">‹</button>
           <span class="mt-mid">
             <span class="mt-label" id="monthTotalLabel">—</span>
             <span class="mt-val" id="monthTotalVal">0.00</span>
             <span class="mt-avg" id="monthTotalAvg"></span>
             <span class="mt-avg" id="weekTotalLine"></span>
           </span>
-          <button class="mt-arrow" id="nextMonth">›</button>
+          <button class="mt-arrow" id="nextMonth" aria-label="الشهر التالي / Next month">›</button>
         </div>
 
         <div class="target-card" id="targetCard" style="display:none;">
@@ -591,7 +618,7 @@
 
 <div class="totalbar" id="totalbar">
   <div class="totalbar-inner">
-    <button class="tb-handle" id="tbHandle" type="button">
+    <button class="tb-handle" id="tbHandle" type="button" aria-expanded="false" aria-controls="tbExpand">
       <span class="tb-chevron" id="tbChevron">▴</span>
       <span class="tb-handle-label" data-i18n="total">الإجمالي</span>
       <span class="tb-handle-val" id="totalVal">0.00</span>
@@ -616,7 +643,7 @@
 
 <div class="modal-overlay" id="peopleModal">
   <div class="modal-sheet">
-    <button class="modal-close-x" id="peopleClose">✕</button>
+    <button class="modal-close-x" id="peopleClose" aria-label="إغلاق / Close">✕</button>
     <h3 data-i18n="peopleTitle">من يسجّل الدخل؟</h3>
     <p class="hint" data-i18n="peopleHint">أضف أكثر من طبيب أو موظف، لكل واحد سجله وتارجته الخاص — بما فيه تارجت مختلف لكل شهر.</p>
     <div id="peopleBody"></div>
@@ -631,7 +658,7 @@
 
 <div class="modal-overlay" id="searchModal">
   <div class="modal-sheet">
-    <button class="modal-close-x" id="searchClose">✕</button>
+    <button class="modal-close-x" id="searchClose" aria-label="إغلاق / Close">✕</button>
     <h3 data-i18n="searchTitle">بحث في كل الحركات</h3>
     <input type="text" class="note-input" id="searchInput" data-i18n-ph="searchPh" placeholder="ابحث بالملاحظة، المبلغ، أو التاريخ (مثلاً 2026-09)" style="margin-bottom:12px;">
     <div id="searchResults"></div>
@@ -640,7 +667,7 @@
 
 <div class="modal-overlay" id="pinModal">
   <div class="modal-sheet">
-    <button class="modal-close-x" id="pinModalClose">✕</button>
+    <button class="modal-close-x" id="pinModalClose" aria-label="إغلاق / Close">✕</button>
     <h3 data-i18n="lockTitle">قفل بكود PIN</h3>
     <p class="hint" data-i18n="lockHint">كود مكوّن من 4 أرقام يُطلب عند فتح الأداة. يُحفظ مشفّراً في هذا الجهاز فقط.</p>
     <div class="field">
@@ -672,7 +699,7 @@
 
 <div class="modal-overlay" id="ghModal">
   <div class="modal-sheet">
-    <button class="modal-close-x" id="ghClose">✕</button>
+    <button class="modal-close-x" id="ghClose" aria-label="إغلاق / Close">✕</button>
     <h3 data-i18n="ghTitle">مزامنة مع GitHub</h3>
     <p class="hint" data-i18n="ghHint">تُحفظ الحركات محلياً دائماً، وإذا فعّلت المزامنة هنا سترفع نسخة تلقائياً لملف JSON داخل مستودعك على GitHub بعد كل إضافة أو حذف.</p>
     <div class="field">
@@ -2575,6 +2602,7 @@
       if(saved !== null) open = saved === "1";
     }catch(e){}
     function apply(){
+      toggleBtn.setAttribute("aria-expanded", open ? "true" : "false");
       if(open){
         bodyEl.style.maxHeight = bodyEl.scrollHeight + "px";
         chevronEl.classList.add("open");
