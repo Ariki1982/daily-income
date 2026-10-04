@@ -1,7 +1,7 @@
 {
   "app": "daily-income",
   "version": 2,
-  "updatedAt": "2026-10-04T16:02:03.335Z",
+  "updatedAt": "2026-10-04T16:02:46.090Z",
   "entries": {
     "2026-09-02": [
       {
@@ -674,50 +674,15 @@
         "note": "",
         "person": "_legacy",
         "ts": 1791129690665
-      },
-      {
-        "id": "1791129694337_h4e39",
-        "time": "19:01",
-        "amount": 50,
-        "method": "card",
-        "shift": "evening",
-        "note": "",
-        "person": "_legacy",
-        "ts": 1791129694337
-      },
-      {
-        "id": "1791129708861_06ii0",
-        "time": "19:01",
-        "amount": 30,
-        "method": "card",
-        "shift": "evening",
-        "note": "",
-        "person": "_legacy",
-        "ts": 1791129708861
-      },
-      {
-        "id": "1791129717478_52dp0",
-        "time": "19:01",
-        "amount": 30,
-        "method": "card",
-        "shift": "evening",
-        "note": "",
-        "person": "_legacy",
-        "ts": 1791129717478
-      },
-      {
-        "id": "1791129721742_nsv3s",
-        "time": "19:02",
-        "amount": 600,
-        "method": "card",
-        "shift": "evening",
-        "note": "",
-        "person": "_legacy",
-        "ts": 1791129721742
       }
     ]
   },
-  "deleted": {},
+  "deleted": {
+    "1791129721742_nsv3s": 1791129762763,
+    "1791129717478_52dp0": 1791129763534,
+    "1791129708861_06ii0": 1791129764281,
+    "1791129694337_h4e39": 1791129765200
+  },
   "people": {
     "_legacy": {
       "id": "_legacy",
