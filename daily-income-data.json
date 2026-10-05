@@ -1,7 +1,7 @@
 {
   "app": "daily-income",
   "version": 2,
-  "updatedAt": "2026-10-05T13:19:22.410Z",
+  "updatedAt": "2026-10-05T13:19:33.632Z",
   "entries": {
     "2026-09-02": [
       {
@@ -706,6 +706,16 @@
         "note": "",
         "person": "_legacy",
         "ts": 1791206360718
+      },
+      {
+        "id": "1791206371655_uhxt4",
+        "time": "16:19",
+        "amount": 180,
+        "method": "cash",
+        "shift": "morning",
+        "note": "",
+        "person": "_legacy",
+        "ts": 1791206371655
       }
     ]
   },
