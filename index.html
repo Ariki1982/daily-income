@@ -99,6 +99,7 @@
         "daynav insights"
         "nudge insights"
         "form insights"
+        "patients insights"
         "ledgerhead insights"
         "entrylist insights";
       column-gap:22px;
@@ -109,6 +110,7 @@
     .daynav{grid-area:daynav; margin:14px 0 0;}
     .backup-nudge{grid-area:nudge;}
     #entryFormCard{grid-area:form;}
+    #patientCard{grid-area:patients;}
     .ledger-head{grid-area:ledgerhead;}
     #entryList{grid-area:entrylist;}
     .insights-wrap{grid-area:insights; position:sticky; top:16px; margin-bottom:0;}
@@ -297,6 +299,32 @@
   }
   .add-btn:active{transform:scale(.98);}
   .add-btn:disabled{opacity:.45; cursor:not-allowed;}
+
+  .patient-row{display:flex; align-items:center; justify-content:space-between; padding:9px 2px;}
+  .patient-row + .patient-row{border-top:1px solid var(--line);}
+  .patient-label{font-size:13.5px; font-weight:700; color:var(--ink);}
+  .stepper{display:flex; align-items:center; gap:0; border:1px solid var(--line-strong); border-radius:10px; overflow:hidden; background:var(--paper-2);}
+  .stepper .step-btn{
+    width:36px; height:36px; border:none; background:transparent; color:var(--teal);
+    font-size:18px; font-weight:800; cursor:pointer; font-family:var(--font-num);
+  }
+  .stepper .step-btn:active{background:var(--teal-dim);}
+  .stepper input{
+    width:52px; border:none; border-inline:1px solid var(--line-strong); background:transparent; color:var(--ink);
+    font-family:var(--font-num); font-size:16px; font-weight:800; text-align:center; direction:ltr; outline:none;
+    -moz-appearance:textfield;
+  }
+  .stepper input::-webkit-outer-spin-button, .stepper input::-webkit-inner-spin-button{-webkit-appearance:none; margin:0;}
+
+  .patient-stats-card{
+    background:var(--paper-2); border:1px solid var(--line); border-radius:12px;
+    padding:12px 14px; margin-bottom:14px;
+  }
+  .psc-title{font-size:12px; font-weight:700; color:var(--ink-dim); margin-bottom:8px;}
+  .psc-row{display:flex; justify-content:space-between; gap:6px;}
+  .psc-stat{flex:1; text-align:center; display:flex; flex-direction:column; align-items:center; gap:2px;}
+  .psc-num{font-family:var(--font-num); font-size:20px; font-weight:800; color:var(--ink);}
+  .psc-lbl{font-size:10.5px; font-weight:600; color:var(--ink-dim); white-space:nowrap;}
 
   /* ---------- Ledger list ---------- */
   .ledger-head{display:flex; justify-content:space-between; align-items:baseline; margin:4px 2px 8px;}
@@ -570,6 +598,26 @@
     <button class="add-btn" id="addBtn" data-i18n="addBtn">إضافة إلى السجل</button>
   </div>
 
+  <div class="card" id="patientCard">
+    <h2 data-i18n="patientsTitle">مرضى اليوم</h2>
+    <div class="patient-row">
+      <span class="patient-label">🆕 <span data-i18n="newPatients">مرضى جدد</span></span>
+      <div class="stepper">
+        <button type="button" class="step-btn" data-pfield="new" data-delta="-1">−</button>
+        <input type="number" inputmode="numeric" min="0" step="1" id="newPatientsInput" value="0">
+        <button type="button" class="step-btn" data-pfield="new" data-delta="1">+</button>
+      </div>
+    </div>
+    <div class="patient-row">
+      <span class="patient-label">🔁 <span data-i18n="followupPatients">مراجعين</span></span>
+      <div class="stepper">
+        <button type="button" class="step-btn" data-pfield="followup" data-delta="-1">−</button>
+        <input type="number" inputmode="numeric" min="0" step="1" id="followupPatientsInput" value="0">
+        <button type="button" class="step-btn" data-pfield="followup" data-delta="1">+</button>
+      </div>
+    </div>
+  </div>
+
   <div class="ledger-head">
     <h2 data-i18n="entriesToday">حركات اليوم</h2>
     <span class="count" id="entryCount">0</span>
@@ -592,6 +640,24 @@
             <span class="mt-avg" id="weekTotalLine"></span>
           </span>
           <button class="mt-arrow" id="nextMonth" aria-label="الشهر التالي / Next month">›</button>
+        </div>
+
+        <div class="patient-stats-card" id="patientStatsCard">
+          <div class="psc-title" data-i18n="monthlyPatients">مرضى الشهر</div>
+          <div class="psc-row">
+            <div class="psc-stat">
+              <span class="psc-num" id="pscNewMonth">0</span>
+              <span class="psc-lbl">🆕 <span data-i18n="newPatients">مرضى جدد</span></span>
+            </div>
+            <div class="psc-stat">
+              <span class="psc-num" id="pscFollowupMonth">0</span>
+              <span class="psc-lbl">🔁 <span data-i18n="followupPatients">مراجعين</span></span>
+            </div>
+            <div class="psc-stat">
+              <span class="psc-num" id="pscTotalMonth">0</span>
+              <span class="psc-lbl">👥 <span data-i18n="totalPatients">إجمالي المرضى</span></span>
+            </div>
+          </div>
         </div>
 
         <div class="target-card" id="targetCard" style="display:none;">
@@ -828,6 +894,8 @@
       printOpeningSafari:"يفتح تقرير الطباعة في Safari لأن الطباعة غير مدعومة داخل تطبيق الشاشة الرئيسية",
       monthTotalPrefix:"إجمالي",
       undoBtn:"تراجع", avgPerDay:"متوسط اليوم", trendTitle:"الاتجاه الشهري (آخر 6 أشهر)", last7days:"آخر 7 أيام", shiftCompareTitle:"مقارنة الدوامات (هذا الشهر)", insightsTitle:"الإحصائيات والتحليلات",
+      patientsTitle:"مرضى اليوم", newPatients:"مرضى جدد", followupPatients:"مراجعين", totalPatients:"إجمالي المرضى",
+      monthlyPatients:"مرضى الشهر", patientSavedToast:"تم تحديث عدد المرضى",
       editingBanner:"تعديل حركة موجودة", cancelEdit:"إلغاء", saveEdit:"حفظ التعديل", savedEditToast:"تم حفظ التعديل",
       lockTitle:"قفل بكود PIN", lockHint:"كود مكوّن من 4 أرقام يُطلب عند فتح الأداة. يُحفظ مشفّراً في هذا الجهاز فقط.",
       pinNew:"الكود الجديد (4 أرقام)", pinConfirm:"تأكيد الكود", pinSave:"حفظ", pinRemove:"إزالة القفل",
@@ -892,6 +960,8 @@
       printOpeningSafari:"Opening the print report in Safari — printing isn't supported inside the home-screen app",
       monthTotalPrefix:"Total for",
       undoBtn:"Undo", avgPerDay:"Daily average", trendTitle:"Monthly trend (last 6 months)", last7days:"Last 7 days", shiftCompareTitle:"Shift comparison (this month)", insightsTitle:"Stats & Insights",
+      patientsTitle:"Today's Patients", newPatients:"New patients", followupPatients:"Follow-ups", totalPatients:"Total patients",
+      monthlyPatients:"This month's patients", patientSavedToast:"Patient count updated",
       editingBanner:"Editing existing entry", cancelEdit:"Cancel", saveEdit:"Save changes", savedEditToast:"Changes saved",
       lockTitle:"PIN lock", lockHint:"A 4-digit code required to open the tool. Stored hashed on this device only.",
       pinNew:"New code (4 digits)", pinConfirm:"Confirm code", pinSave:"Save", pinRemove:"Remove lock",
@@ -952,6 +1022,7 @@
           parsed.settings = parsed.settings || {};
           parsed.deleted = parsed.deleted || {};
           parsed.people = parsed.people || {};
+          parsed.patients = parsed.patients || {};
           if(Object.keys(parsed.people).length === 0){
             const legacy = emptyPerson("_legacy");
             if(parsed.profile){
@@ -967,7 +1038,7 @@
         }
       }
     }catch(e){}
-    return {entries:{}, settings:{}, deleted:{}, people:{"_legacy": emptyPerson("_legacy")}};
+    return {entries:{}, settings:{}, deleted:{}, people:{"_legacy": emptyPerson("_legacy")}, patients:{}};
   }
   function saveStore(){
     try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }catch(e){}
@@ -1115,7 +1186,7 @@
 
   /* ---- merge logic: per-entry timestamps + tombstones so edits and deletes really sync ---- */
   function entryTs(en){ return (en && typeof en.ts === "number") ? en.ts : 0; }
-  function normStore(s){ return { entries: (s && s.entries) || {}, deleted: (s && s.deleted) || {}, people: (s && s.people) || {} }; }
+  function normStore(s){ return { entries: (s && s.entries) || {}, deleted: (s && s.deleted) || {}, people: (s && s.people) || {}, patients: (s && s.patients) || {} }; }
 
   // a = remote, b = local. On equal timestamps the local copy wins.
   function mergeStores(a, b){
@@ -1154,7 +1225,18 @@
         if(!cur || (cand.ts || 0) >= (cur.ts || 0)) people[pid] = cand;
       });
     });
-    return {entries, deleted, people};
+    const patients = {};
+    [A.patients, B.patients].forEach(pm=>{
+      Object.keys(pm || {}).forEach(date=>{
+        Object.keys(pm[date] || {}).forEach(pid=>{
+          const cand = pm[date][pid];
+          if(!patients[date]) patients[date] = {};
+          const cur = patients[date][pid];
+          if(!cur || (cand.ts || 0) >= (cur.ts || 0)) patients[date][pid] = cand;
+        });
+      });
+    });
+    return {entries, deleted, people, patients};
   }
 
   function peopleSig(people){
@@ -1165,6 +1247,18 @@
     });
   }
 
+  function patientsSig(patients){
+    const dates = Object.keys(patients || {}).sort();
+    return dates.map(date=>{
+      const byPerson = patients[date] || {};
+      const pids = Object.keys(byPerson).sort();
+      return [date, pids.map(pid=>{
+        const r = byPerson[pid] || {};
+        return [pid, Number(r.new) || 0, Number(r.followup) || 0, r.ts || 0];
+      })];
+    });
+  }
+
   function storeSig(s){
     const n = normStore(s);
     const dates = Object.keys(n.entries).filter(d=> (n.entries[d] || []).length).sort();
@@ -1172,13 +1266,13 @@
       .sort((x,y)=> String(x.id).localeCompare(String(y.id)))
       .map(en=> [en.id, entryTs(en), en.time, en.amount, en.method, en.shift || "", en.note || ""])]);
     const del = Object.keys(n.deleted).sort().map(id=> [id, n.deleted[id]]);
-    return JSON.stringify([e, del, peopleSig(n.people)]);
+    return JSON.stringify([e, del, peopleSig(n.people), patientsSig(n.patients)]);
   }
 
   function ghPayload(){
     return {
       app: "daily-income", version: 2, updatedAt: new Date().toISOString(),
-      entries: state.entries, deleted: state.deleted || {}, people: state.people || {}, settings: {}
+      entries: state.entries, deleted: state.deleted || {}, people: state.people || {}, patients: state.patients || {}, settings: {}
     };
   }
 
@@ -1191,10 +1285,11 @@
         state.entries = merged.entries;
         state.deleted = merged.deleted;
         state.people = (merged.people && Object.keys(merged.people).length) ? merged.people : state.people;
+        state.patients = merged.patients || state.patients || {};
         if(!activePersonId || !state.people[activePersonId]) activePersonId = Object.keys(state.people)[0];
         saveStore();
         renderProfile();
-        renderDayNav(); renderEntries(); refreshNoteSuggestions();
+        renderDayNav(); renderEntries(); refreshNoteSuggestions(); renderPatientCard();
       }
       const remoteSig = (remote.exists && remote.data) ? storeSig(remote.data) : null;
       if(remoteSig !== storeSig(state)){
@@ -1375,6 +1470,62 @@
   }
 
   /* ============ people (name / job / monthly targets) ============ */
+  /* ============ daily patient counts (new / follow-up), per person ============ */
+  function getPatientCount(date, personId){
+    const row = state.patients && state.patients[date] && state.patients[date][personId];
+    return row ? {new: Number(row.new)||0, followup: Number(row.followup)||0} : {new:0, followup:0};
+  }
+  function setPatientCount(date, personId, field, value){
+    const v = Math.max(0, Math.round(Number(value) || 0));
+    if(!state.patients[date]) state.patients[date] = {};
+    const existing = state.patients[date][personId] || {new:0, followup:0, ts:0};
+    state.patients[date][personId] = Object.assign({}, existing, {[field]: v, ts: Date.now()});
+    saveStore();
+    renderPatientCard();
+    renderPatientMonthTotal();
+    autoSyncPush();
+  }
+  function renderPatientCard(){
+    const c = getPatientCount(currentDate, activePersonId);
+    const nIn = document.getElementById("newPatientsInput");
+    const fIn = document.getElementById("followupPatientsInput");
+    if(nIn) nIn.value = c.new;
+    if(fIn) fIn.value = c.followup;
+    if(insightsCollapse) insightsCollapse.refreshHeight();
+  }
+  function renderPatientMonthTotal(){
+    const monthKey = currentDate.slice(0,7);
+    let newTotal = 0, followupTotal = 0;
+    Object.keys(state.patients || {}).forEach(date=>{
+      if(date.slice(0,7) !== monthKey) return;
+      const row = state.patients[date][activePersonId];
+      if(!row) return;
+      newTotal += Number(row.new) || 0;
+      followupTotal += Number(row.followup) || 0;
+    });
+    const elN = document.getElementById("pscNewMonth");
+    const elF = document.getElementById("pscFollowupMonth");
+    const elT = document.getElementById("pscTotalMonth");
+    if(elN) elN.textContent = fmtInt(newTotal);
+    if(elF) elF.textContent = fmtInt(followupTotal);
+    if(elT) elT.textContent = fmtInt(newTotal + followupTotal);
+    if(insightsCollapse) insightsCollapse.refreshHeight();
+  }
+  function initPatientUI(){
+    const nIn = document.getElementById("newPatientsInput");
+    const fIn = document.getElementById("followupPatientsInput");
+    document.querySelectorAll(".step-btn").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const field = btn.getAttribute("data-pfield");
+        const delta = Number(btn.getAttribute("data-delta"));
+        const cur = getPatientCount(currentDate, activePersonId);
+        setPatientCount(currentDate, activePersonId, field, (field === "new" ? cur.new : cur.followup) + delta);
+      });
+    });
+    nIn.addEventListener("change", ()=> setPatientCount(currentDate, activePersonId, "new", nIn.value));
+    fIn.addEventListener("change", ()=> setPatientCount(currentDate, activePersonId, "followup", fIn.value));
+  }
+
   function personKey(en){ return en.person || "_legacy"; }
   function getPerson(id){ return (state.people && state.people[id]) || null; }
   function getActivePerson(){ return getPerson(activePersonId) || emptyPerson(activePersonId || "_legacy"); }
@@ -1396,6 +1547,8 @@
     renderProfile();
     renderDayNav();
     renderEntries();
+    renderPatientCard();
+    renderPatientMonthTotal();
     if(!silent) toast(I18N[lang].personSwitchedToast.replace("{name}", state.people[id].name || I18N[lang].personUnnamed));
   }
 
@@ -1911,6 +2064,7 @@
     document.getElementById("dayLabelMain").textContent = label;
     document.getElementById("dayLabelSub").textContent =
       new Intl.DateTimeFormat(locale, {weekday:"long"}).format(d) + " · " + getHijriString(d);
+    renderPatientCard();
   }
 
   /* ============ toast ============ */
@@ -2131,6 +2285,7 @@
     renderMonthBreakdown();
     renderShiftCompare();
     renderBackupNudge();
+    renderPatientMonthTotal();
     if(insightsCollapse) insightsCollapse.refreshHeight();
   }
 
@@ -2425,10 +2580,11 @@
         state.entries = mergedImport.entries;
         state.deleted = mergedImport.deleted;
         state.people = (mergedImport.people && Object.keys(mergedImport.people).length) ? mergedImport.people : state.people;
+        state.patients = mergedImport.patients || state.patients || {};
         if(!activePersonId || !state.people[activePersonId]) activePersonId = Object.keys(state.people)[0];
         saveStore();
         renderProfile();
-        renderDayNav(); renderEntries();
+        renderDayNav(); renderEntries(); renderPatientCard();
         refreshNoteSuggestions();
         autoSyncPush();
         toast(I18N[lang].importedOk);
@@ -2663,6 +2819,9 @@
     initDownloads();
     watchTotalbarHeight();
     initCollapsibles();
+    initPatientUI();
+    renderPatientCard();
+    renderPatientMonthTotal();
     initGhUI();
     autoPullOnLoad();
     initPinUI();
