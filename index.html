@@ -199,16 +199,34 @@
 
   .insights-wrap{margin-bottom:14px;}
   .insights-toggle{
-    width:100%; display:flex; align-items:center; justify-content:space-between;
+    width:100%; display:flex; align-items:center; justify-content:space-between; gap:8px;
     background:linear-gradient(135deg, var(--teal-dim), var(--gold-dim));
     border:1px solid var(--line-strong); border-radius:12px; padding:12px 14px;
     cursor:pointer; font-family:var(--font-ui);
   }
-  .insights-toggle-label{font-size:13.5px; font-weight:800; color:var(--ink);}
-  .insights-chevron{font-size:12px; color:var(--ink-dim); transition:transform .25s ease;}
+  .insights-toggle-label{font-size:13.5px; font-weight:800; color:var(--ink); flex-shrink:0;}
+  .insights-chevron{font-size:12px; color:var(--ink-dim); transition:transform .25s ease; flex-shrink:0;}
   .insights-chevron.open{transform:rotate(180deg);}
   .insights-body{max-height:0; overflow:hidden; transition:max-height .3s ease;}
   .insights-body-inner{padding-top:12px;}
+
+  .section-summary{
+    flex:1; min-width:0; text-align:center; font-family:var(--font-num); font-size:12.5px; font-weight:700;
+    color:var(--ink-dim); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; direction:ltr; unicode-bidi:plaintext;
+  }
+
+  .section-wrap{margin-bottom:14px;}
+  .section-toggle{
+    width:100%; display:flex; align-items:center; justify-content:space-between; gap:8px;
+    background:linear-gradient(135deg, var(--gold-dim), var(--teal-dim));
+    border:1px solid var(--line-strong); border-radius:12px; padding:12px 14px;
+    cursor:pointer; font-family:var(--font-ui);
+  }
+  .section-toggle-label{font-size:13.5px; font-weight:800; color:var(--ink); flex-shrink:0;}
+  .section-chevron{font-size:12px; color:var(--ink-dim); transition:transform .25s ease; flex-shrink:0;}
+  .section-chevron.open{transform:rotate(180deg);}
+  .section-body{max-height:0; overflow:hidden; transition:max-height .3s ease;}
+  .section-body-inner{padding-top:12px;}
 
   .trend-card{
     background:var(--paper); border:1px solid var(--line); border-radius:14px;
@@ -321,8 +339,8 @@
     padding:12px 14px; margin-bottom:14px;
   }
   .psc-title{font-size:12px; font-weight:700; color:var(--ink-dim); margin-bottom:8px;}
-  .psc-row{display:flex; justify-content:space-between; gap:6px;}
-  .psc-stat{flex:1; text-align:center; display:flex; flex-direction:column; align-items:center; gap:2px;}
+  .psc-row{display:flex; flex-wrap:wrap; justify-content:space-between; gap:10px 6px;}
+  .psc-stat{flex:1 1 calc(50% - 6px); min-width:0; text-align:center; display:flex; flex-direction:column; align-items:center; gap:2px;}
   .psc-num{font-family:var(--font-num); font-size:20px; font-weight:800; color:var(--ink);}
   .psc-lbl{font-size:10.5px; font-weight:600; color:var(--ink-dim); white-space:nowrap;}
 
@@ -598,8 +616,14 @@
     <button class="add-btn" id="addBtn" data-i18n="addBtn">إضافة إلى السجل</button>
   </div>
 
-  <div class="card" id="patientCard">
-    <h2 data-i18n="patientsTitle">مرضى اليوم</h2>
+  <div class="section-wrap" id="patientCard">
+    <button class="section-toggle" id="patientToggle" type="button" aria-expanded="false" aria-controls="patientBody">
+      <span class="section-toggle-label">📋 <span data-i18n="patientsTitle">مرضى اليوم</span></span>
+      <span class="section-summary" id="patientSummary"></span>
+      <span class="section-chevron" id="patientChevron">▾</span>
+    </button>
+    <div class="section-body" id="patientBody">
+    <div class="section-body-inner">
     <div class="patient-row">
       <span class="patient-label">🆕 <span data-i18n="newPatients">مرضى جدد</span></span>
       <div class="stepper">
@@ -616,6 +640,16 @@
         <button type="button" class="step-btn" data-pfield="followup" data-delta="1">+</button>
       </div>
     </div>
+    <div class="patient-row">
+      <span class="patient-label">🛠️ <span data-i18n="servicesCount">عدد الخدمات</span></span>
+      <div class="stepper">
+        <button type="button" class="step-btn" data-pfield="services" data-delta="-1">−</button>
+        <input type="number" inputmode="numeric" min="0" step="1" id="servicesInput" value="0">
+        <button type="button" class="step-btn" data-pfield="services" data-delta="1">+</button>
+      </div>
+    </div>
+    </div>
+    </div>
   </div>
 
   <div class="ledger-head">
@@ -627,6 +661,7 @@
   <div class="insights-wrap">
     <button class="insights-toggle" id="insightsToggle" type="button" aria-expanded="false" aria-controls="insightsBody">
       <span class="insights-toggle-label">📊 <span data-i18n="insightsTitle">الإحصائيات والتحليلات</span></span>
+      <span class="section-summary" id="insightsSummary"></span>
       <span class="insights-chevron" id="insightsChevron">▾</span>
     </button>
     <div class="insights-body" id="insightsBody">
@@ -656,6 +691,10 @@
             <div class="psc-stat">
               <span class="psc-num" id="pscTotalMonth">0</span>
               <span class="psc-lbl">👥 <span data-i18n="totalPatients">إجمالي المرضى</span></span>
+            </div>
+            <div class="psc-stat">
+              <span class="psc-num" id="pscServicesMonth">0</span>
+              <span class="psc-lbl">🛠️ <span data-i18n="servicesCount">عدد الخدمات</span></span>
             </div>
           </div>
         </div>
@@ -895,7 +934,7 @@
       monthTotalPrefix:"إجمالي",
       undoBtn:"تراجع", avgPerDay:"متوسط اليوم", trendTitle:"الاتجاه الشهري (آخر 6 أشهر)", last7days:"آخر 7 أيام", shiftCompareTitle:"مقارنة الدوامات (هذا الشهر)", insightsTitle:"الإحصائيات والتحليلات",
       patientsTitle:"مرضى اليوم", newPatients:"مرضى جدد", followupPatients:"مراجعين", totalPatients:"إجمالي المرضى",
-      monthlyPatients:"مرضى الشهر", patientSavedToast:"تم تحديث عدد المرضى",
+      monthlyPatients:"مرضى الشهر", patientSavedToast:"تم تحديث عدد المرضى", servicesCount:"عدد الخدمات",
       editingBanner:"تعديل حركة موجودة", cancelEdit:"إلغاء", saveEdit:"حفظ التعديل", savedEditToast:"تم حفظ التعديل",
       lockTitle:"قفل بكود PIN", lockHint:"كود مكوّن من 4 أرقام يُطلب عند فتح الأداة. يُحفظ مشفّراً في هذا الجهاز فقط.",
       pinNew:"الكود الجديد (4 أرقام)", pinConfirm:"تأكيد الكود", pinSave:"حفظ", pinRemove:"إزالة القفل",
@@ -961,7 +1000,7 @@
       monthTotalPrefix:"Total for",
       undoBtn:"Undo", avgPerDay:"Daily average", trendTitle:"Monthly trend (last 6 months)", last7days:"Last 7 days", shiftCompareTitle:"Shift comparison (this month)", insightsTitle:"Stats & Insights",
       patientsTitle:"Today's Patients", newPatients:"New patients", followupPatients:"Follow-ups", totalPatients:"Total patients",
-      monthlyPatients:"This month's patients", patientSavedToast:"Patient count updated",
+      monthlyPatients:"This month's patients", patientSavedToast:"Patient count updated", servicesCount:"Services performed",
       editingBanner:"Editing existing entry", cancelEdit:"Cancel", saveEdit:"Save changes", savedEditToast:"Changes saved",
       lockTitle:"PIN lock", lockHint:"A 4-digit code required to open the tool. Stored hashed on this device only.",
       pinNew:"New code (4 digits)", pinConfirm:"Confirm code", pinSave:"Save", pinRemove:"Remove lock",
@@ -1254,7 +1293,7 @@
       const pids = Object.keys(byPerson).sort();
       return [date, pids.map(pid=>{
         const r = byPerson[pid] || {};
-        return [pid, Number(r.new) || 0, Number(r.followup) || 0, r.ts || 0];
+        return [pid, Number(r.new) || 0, Number(r.followup) || 0, Number(r.services) || 0, r.ts || 0];
       })];
     });
   }
@@ -1473,12 +1512,12 @@
   /* ============ daily patient counts (new / follow-up), per person ============ */
   function getPatientCount(date, personId){
     const row = state.patients && state.patients[date] && state.patients[date][personId];
-    return row ? {new: Number(row.new)||0, followup: Number(row.followup)||0} : {new:0, followup:0};
+    return row ? {new: Number(row.new)||0, followup: Number(row.followup)||0, services: Number(row.services)||0} : {new:0, followup:0, services:0};
   }
   function setPatientCount(date, personId, field, value){
     const v = Math.max(0, Math.round(Number(value) || 0));
     if(!state.patients[date]) state.patients[date] = {};
-    const existing = state.patients[date][personId] || {new:0, followup:0, ts:0};
+    const existing = state.patients[date][personId] || {new:0, followup:0, services:0, ts:0};
     state.patients[date][personId] = Object.assign({}, existing, {[field]: v, ts: Date.now()});
     saveStore();
     renderPatientCard();
@@ -1489,26 +1528,33 @@
     const c = getPatientCount(currentDate, activePersonId);
     const nIn = document.getElementById("newPatientsInput");
     const fIn = document.getElementById("followupPatientsInput");
+    const sIn = document.getElementById("servicesInput");
     if(nIn) nIn.value = c.new;
     if(fIn) fIn.value = c.followup;
-    if(insightsCollapse) insightsCollapse.refreshHeight();
+    if(sIn) sIn.value = c.services;
+    const sum = document.getElementById("patientSummary");
+    if(sum) sum.textContent = `🆕${c.new} 🔁${c.followup} 🛠️${c.services}`;
+    if(patientCollapse) patientCollapse.refreshHeight();
   }
   function renderPatientMonthTotal(){
     const monthKey = currentDate.slice(0,7);
-    let newTotal = 0, followupTotal = 0;
+    let newTotal = 0, followupTotal = 0, servicesTotal = 0;
     Object.keys(state.patients || {}).forEach(date=>{
       if(date.slice(0,7) !== monthKey) return;
       const row = state.patients[date][activePersonId];
       if(!row) return;
       newTotal += Number(row.new) || 0;
       followupTotal += Number(row.followup) || 0;
+      servicesTotal += Number(row.services) || 0;
     });
     const elN = document.getElementById("pscNewMonth");
     const elF = document.getElementById("pscFollowupMonth");
     const elT = document.getElementById("pscTotalMonth");
+    const elS = document.getElementById("pscServicesMonth");
     if(elN) elN.textContent = fmtInt(newTotal);
     if(elF) elF.textContent = fmtInt(followupTotal);
     if(elT) elT.textContent = fmtInt(newTotal + followupTotal);
+    if(elS) elS.textContent = fmtInt(servicesTotal);
     if(insightsCollapse) insightsCollapse.refreshHeight();
   }
   function initPatientUI(){
@@ -1519,11 +1565,13 @@
         const field = btn.getAttribute("data-pfield");
         const delta = Number(btn.getAttribute("data-delta"));
         const cur = getPatientCount(currentDate, activePersonId);
-        setPatientCount(currentDate, activePersonId, field, (field === "new" ? cur.new : cur.followup) + delta);
+        setPatientCount(currentDate, activePersonId, field, (Number(cur[field]) || 0) + delta);
       });
     });
+    const sIn = document.getElementById("servicesInput");
     nIn.addEventListener("change", ()=> setPatientCount(currentDate, activePersonId, "new", nIn.value));
     fIn.addEventListener("change", ()=> setPatientCount(currentDate, activePersonId, "followup", fIn.value));
+    sIn.addEventListener("change", ()=> setPatientCount(currentDate, activePersonId, "services", sIn.value));
   }
 
   function personKey(en){ return en.person || "_legacy"; }
@@ -2272,6 +2320,8 @@
     const monthLabel = new Intl.DateTimeFormat(locale, {month:"long", year:"numeric"}).format(new Date(y, m-1, 1));
     document.getElementById("monthTotalLabel").textContent = `${I18N[lang].monthTotalPrefix} ${monthLabel}`;
     document.getElementById("monthTotalVal").textContent = fmtMoney(total) + " " + I18N[lang].currency;
+    const iSum = document.getElementById("insightsSummary");
+    if(iSum) iSum.textContent = fmtMoney(total) + " " + I18N[lang].currency;
     renderTarget(total);
     const avgEl = document.getElementById("monthTotalAvg");
     avgEl.textContent = activeDays > 0 ? `${I18N[lang].avgPerDay}: ${fmtMoney(total/activeDays)} ${I18N[lang].currency}` : "";
@@ -2777,6 +2827,7 @@
   }
   let insightsCollapse = null;
   let totalbarCollapse = null;
+  let patientCollapse = null;
   function initCollapsibles(){
     insightsCollapse = makeCollapsible(
       document.getElementById("insightsToggle"), document.getElementById("insightsBody"),
@@ -2785,6 +2836,10 @@
     totalbarCollapse = makeCollapsible(
       document.getElementById("tbHandle"), document.getElementById("tbExpand"),
       document.getElementById("tbChevron"), "tmc_daily_income_tb_open", false
+    );
+    patientCollapse = makeCollapsible(
+      document.getElementById("patientToggle"), document.getElementById("patientBody"),
+      document.getElementById("patientChevron"), "tmc_daily_income_patient_open", false
     );
   }
 
