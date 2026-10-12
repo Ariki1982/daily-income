@@ -2780,7 +2780,7 @@
     try{
       const file = new File([blob], fileName, {type:"application/pdf"});
       if(navigator.canShare && navigator.canShare({files:[file]})){
-        await navigator.share({files:[file], title: I18N[lang].printReportTitle});
+        await navigator.share({files:[file]});
         return true;
       }
     }catch(e){
