@@ -34,6 +34,7 @@
     --insurance:#B8862B;
     --other:#6B6357;
     --danger:#B14545;
+    --danger-dim:#B145451c;
     --radius:10px;
     --shadow:0 1px 2px rgba(28,43,42,.06), 0 6px 18px rgba(28,43,42,.05);
     --font-ui:'Cairo',system-ui,sans-serif;
@@ -61,13 +62,14 @@
     --insurance:#E0B563;
     --other:#B7AE9C;
     --danger:#E38080;
+    --danger-dim:#E3808022;
     --shadow:0 1px 2px rgba(0,0,0,.25), 0 10px 24px rgba(0,0,0,.35);
   }
   @media (prefers-color-scheme: dark){
     :root:not([data-theme="light"]){
       --bg:#0D1B1A; --paper:#132726; --paper-2:#0F211F; --ink:#EEEAE0; --ink-dim:#9BAFAC;
       --line:#23413E; --line-strong:#2E524D; --teal:#3EBBBB; --teal-dim:#3EBBBB22; --gold:#E0B563; --gold-dim:#E0B56322;
-      --cash:#6BC79A; --card:#7FA6E8; --transfer:#C79BEB; --insurance:#E0B563; --other:#B7AE9C; --danger:#E38080;
+      --cash:#6BC79A; --card:#7FA6E8; --transfer:#C79BEB; --insurance:#E0B563; --other:#B7AE9C; --danger:#E38080; --danger-dim:#E3808022;
       --shadow:0 1px 2px rgba(0,0,0,.25), 0 10px 24px rgba(0,0,0,.35);
     }
   }
@@ -97,6 +99,7 @@
         "topbar topbar"
         "clock insights"
         "daynav insights"
+        "reminder insights"
         "nudge insights"
         "form insights"
         "patients insights"
@@ -108,6 +111,7 @@
     .topbar{grid-area:topbar;}
     .clock-card{grid-area:clock; margin-bottom:0;}
     .daynav{grid-area:daynav; margin:14px 0 0;}
+    .shift-reminder{grid-area:reminder;}
     .backup-nudge{grid-area:nudge;}
     #entryFormCard{grid-area:form;}
     #patientCard{grid-area:patients;}
@@ -544,10 +548,18 @@
     background:var(--gold-dim); border:1px solid var(--gold); border-radius:10px;
     padding:9px 12px; margin-bottom:12px; font-size:12.5px; font-weight:600; color:var(--ink);
   }
-  .backup-nudge .bn-actions{display:flex; align-items:center; gap:6px; flex-shrink:0;}
-  .backup-nudge button{border:none; border-radius:7px; font-family:var(--font-ui); cursor:pointer;}
+  .bn-actions{display:flex; align-items:center; gap:6px; flex-shrink:0;}
+  .backup-nudge button, .shift-reminder button{border:none; border-radius:7px; font-family:var(--font-ui); cursor:pointer;}
   .backup-nudge #bnEnable{background:var(--gold); color:#1c1c1c; font-weight:800; font-size:12px; padding:6px 12px;}
-  .backup-nudge .bn-x{background:transparent; color:var(--ink-dim); font-size:14px; padding:4px 6px;}
+  .bn-x{background:transparent; color:var(--ink-dim); font-size:14px; padding:4px 6px;}
+
+  .shift-reminder{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    background:var(--danger-dim);
+    border:1px solid var(--danger); border-radius:10px;
+    padding:9px 12px; margin-bottom:12px; font-size:12.5px; font-weight:700; color:var(--ink);
+  }
+  .shift-reminder #srGoNow{background:var(--danger); color:#fff; font-weight:800; font-size:12px; padding:6px 12px;}
 </style>
 </head>
 <body>
@@ -559,6 +571,7 @@
       <span class="sub" data-i18n="appSub">تسجيل دخل نهاية الدوام</span>
     </div>
     <div class="iconrow">
+      <button class="iconbtn" id="notifBtn" title="Shift reminders" aria-label="تنبيهات الشفتات / Shift reminders">🔔</button>
       <button class="iconbtn" id="lockBtn" title="Lock" aria-label="قفل PIN / PIN lock">🔒</button>
       <button class="iconbtn" id="ghBtn" title="GitHub Sync" aria-label="مزامنة GitHub / GitHub sync">☁️</button>
       <button class="iconbtn" id="langBtn" title="Language" aria-label="تبديل اللغة / Switch language">AR</button>
@@ -590,6 +603,14 @@
     </div>
     <button id="nextDay" aria-label="اليوم التالي / Next day">›</button>
     <input type="date" id="datePicker">
+  </div>
+
+  <div class="shift-reminder" id="shiftReminder" style="display:none;">
+    <span class="sr-text" id="srText"></span>
+    <span class="bn-actions">
+      <button id="srGoNow">⏱️<span data-i18n="srGoNow">سجّل الآن</span></button>
+      <button id="srDismiss" class="bn-x">✕</button>
+    </span>
   </div>
 
   <div class="backup-nudge" id="backupNudge" style="display:none;">
@@ -771,6 +792,17 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="notifModal">
+  <div class="modal-sheet">
+    <button class="modal-close-x" id="notifModalClose" aria-label="إغلاق / Close">✕</button>
+    <h3 data-i18n="notifBtn">تنبيهات الشفتات</h3>
+    <p class="hint" data-i18n="notifHint">يرسل تنبيهاً من المتصفح الساعة 12 ظهراً والساعة 9 مساءً لو ما سجّلت دخل ذاك الشفت بعد — يعمل فقط والأداة مفتوحة في تبويب.</p>
+    <div class="modal-actions">
+      <button class="save" id="notifToggleBtn" data-i18n="notifEnable" style="flex:1;">تفعيل التنبيهات</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="pinModal">
   <div class="modal-sheet">
     <button class="modal-close-x" id="pinModalClose" aria-label="إغلاق / Close">✕</button>
@@ -913,6 +945,12 @@
       ghSyncing:"جارِ المزامنة…", ghSynced:"تمت المزامنة", ghSyncFailed:"تعذّرت المزامنة",
       ghNotConfigured:"المزامنة غير مفعّلة", ghMerged:"تم الدمج مع GitHub بنجاح",
       bnMessage:"عندك {n} حركة محفوظة على هذا الجهاز فقط — فعّل مزامنة GitHub حتى لا تضيع.", bnEnable:"تفعيل",
+      srGoNow:"سجّل الآن", srMorningDue:"⏰ ما سجّلت دخل الشفت الصباحي بعد", srEveningDue:"⏰ ما سجّلت دخل الشفت المسائي بعد",
+      srBothDue:"⏰ ما سجّلت دخل أي شفت اليوم بعد (الصباحي والمسائي)",
+      notifBtn:"تنبيهات الشفتات", notifHint:"يرسل تنبيهاً من المتصفح الساعة 12 ظهراً والساعة 9 مساءً لو ما سجّلت دخل ذاك الشفت بعد — يعمل فقط والأداة مفتوحة في تبويب.",
+      notifEnable:"تفعيل التنبيهات", notifDisable:"إيقاف التنبيهات", notifEnabledToast:"تم تفعيل تنبيهات الشفتات",
+      notifDisabledToast:"تم إيقاف تنبيهات الشفتات", notifDeniedToast:"صلاحية الإشعارات مرفوضة من إعدادات المتصفح",
+      notifTitleMorning:"تذكير: الشفت الصباحي", notifTitleEvening:"تذكير: الشفت المسائي", notifBody:"ما سجّلت دخل هذا الشفت بعد في دخل اليوم",
       peopleTitle:"من يسجّل الدخل؟", peopleHint:"أضف أكثر من طبيب أو موظف، لكل واحد سجله وتارجته الخاص — بما فيه تارجت مختلف لكل شهر.",
       personUnnamed:"بدون اسم", personSwitchedToast:"تم التبديل إلى {name}",
       personAdd:"+ إضافة شخص جديد", personEditTitle:"تعديل بيانات", personNewTitle:"شخص جديد",
@@ -979,6 +1017,12 @@
       ghSyncing:"Syncing…", ghSynced:"Synced", ghSyncFailed:"Sync failed",
       ghNotConfigured:"Sync not enabled", ghMerged:"Merged with GitHub successfully",
       bnMessage:"You have {n} entries saved only on this device — enable GitHub sync so they are never lost.", bnEnable:"Enable",
+      srGoNow:"Log it now", srMorningDue:"⏰ You haven't logged the morning shift yet", srEveningDue:"⏰ You haven't logged the evening shift yet",
+      srBothDue:"⏰ No shift logged today yet (morning or evening)",
+      notifBtn:"Shift reminders", notifHint:"Sends a browser notification at 12 PM and 9 PM if that shift hasn't been logged yet — only works while the tool is open in a tab.",
+      notifEnable:"Enable reminders", notifDisable:"Disable reminders", notifEnabledToast:"Shift reminders enabled",
+      notifDisabledToast:"Shift reminders disabled", notifDeniedToast:"Notification permission was denied in browser settings",
+      notifTitleMorning:"Reminder: Morning shift", notifTitleEvening:"Reminder: Evening shift", notifBody:"You haven't logged this shift's income yet",
       peopleTitle:"Who is logging income?", peopleHint:"Add more than one doctor or employee — each with their own log and target, including a different target per month.",
       personUnnamed:"Unnamed", personSwitchedToast:"Switched to {name}",
       personAdd:"+ Add a new person", personEditTitle:"Edit details", personNewTitle:"New person",
@@ -1487,7 +1531,7 @@
       }
       saveGhCfg(cfg);
       const ok = await manualSyncNow();
-      if(ok){ modal.classList.remove("show"); renderBackupNudge(); }
+      if(ok){ modal.classList.remove("show"); renderBackupNudge(); renderShiftReminder(); }
     });
 
     $("ghSyncNow").addEventListener("click", manualSyncNow);
@@ -1648,6 +1692,127 @@
     });
   }
 
+  /* ============ shift-entry reminders (12:00 morning / 21:00 evening) ============ */
+  const REMINDER_DISMISS_KEY = "tmc_daily_income_reminder_dismissed";
+  const NOTIF_ENABLED_KEY = "tmc_daily_income_notif_enabled";
+  const NOTIF_FIRED_KEY = "tmc_daily_income_notif_fired";
+
+  function getDismissedShiftsToday(){
+    const t = todayStr();
+    try{
+      const raw = JSON.parse(localStorage.getItem(REMINDER_DISMISS_KEY) || "{}");
+      return new Set(raw[t] || []);
+    }catch(e){ return new Set(); }
+  }
+  function dismissShiftsToday(shiftIds){
+    const t = todayStr();
+    let raw = {};
+    try{ raw = JSON.parse(localStorage.getItem(REMINDER_DISMISS_KEY) || "{}"); }catch(e){}
+    raw = {[t]: Array.from(new Set([...(raw[t] || []), ...shiftIds]))};   // only today's entry kept — old days drop off naturally
+    try{ localStorage.setItem(REMINDER_DISMISS_KEY, JSON.stringify(raw)); }catch(e){}
+  }
+  function getDueShifts(){
+    const now = new Date();
+    const minutesNow = now.getHours()*60 + now.getMinutes();
+    const t = todayStr();
+    const todays = (state.entries[t] || []).filter(en=> personKey(en) === activePersonId);
+    const hasMorning = todays.some(en=> en.shift === "morning");
+    const hasEvening = todays.some(en=> en.shift === "evening");
+    const due = [];
+    if(minutesNow >= 12*60 && !hasMorning) due.push("morning");
+    if(minutesNow >= 21*60 && !hasEvening) due.push("evening");
+    return due;
+  }
+  function renderShiftReminder(){
+    const el = document.getElementById("shiftReminder");
+    const dismissed = getDismissedShiftsToday();
+    const due = getDueShifts().filter(s=> !dismissed.has(s));
+    if(due.length === 0){ el.style.display = "none"; return; }
+    const d = I18N[lang];
+    document.getElementById("srText").textContent =
+      due.length === 2 ? d.srBothDue : (due[0] === "morning" ? d.srMorningDue : d.srEveningDue);
+    el.style.display = "flex";
+  }
+  function initShiftReminderUI(){
+    document.getElementById("srDismiss").addEventListener("click", ()=>{
+      dismissShiftsToday(getDueShifts());
+      document.getElementById("shiftReminder").style.display = "none";
+    });
+    document.getElementById("srGoNow").addEventListener("click", ()=>{
+      if(currentDate !== todayStr()){ currentDate = todayStr(); renderDayNav(); renderEntries(); }
+      document.getElementById("amountInput").focus();
+      document.getElementById("entryFormCard").scrollIntoView({behavior:"smooth", block:"start"});
+    });
+  }
+
+  /* ---- best-effort native browser notification (only fires while this tab is open) ---- */
+  function notifEnabled(){
+    try{ return localStorage.getItem(NOTIF_ENABLED_KEY) === "1"; }catch(e){ return false; }
+  }
+  function getFiredFlags(){
+    const t = todayStr();
+    try{
+      const raw = JSON.parse(localStorage.getItem(NOTIF_FIRED_KEY) || "{}");
+      return new Set(raw[t] || []);
+    }catch(e){ return new Set(); }
+  }
+  function markFired(shiftId){
+    const t = todayStr();
+    let raw = {};
+    try{ raw = JSON.parse(localStorage.getItem(NOTIF_FIRED_KEY) || "{}"); }catch(e){}
+    raw = {[t]: Array.from(new Set([...(raw[t] || []), shiftId]))};
+    try{ localStorage.setItem(NOTIF_FIRED_KEY, JSON.stringify(raw)); }catch(e){}
+  }
+  function maybeFireNativeNotification(){
+    if(!notifEnabled()) return;
+    if(typeof Notification === "undefined" || Notification.permission !== "granted") return;
+    const fired = getFiredFlags();
+    getDueShifts().forEach(shiftId=>{
+      if(fired.has(shiftId)) return;
+      try{
+        new Notification(shiftId === "morning" ? I18N[lang].notifTitleMorning : I18N[lang].notifTitleEvening, {
+          body: I18N[lang].notifBody, tag: "daily-income-" + shiftId + "-" + todayStr()
+        });
+      }catch(e){}
+      markFired(shiftId);
+    });
+  }
+  function updateNotifToggleLabel(){
+    const btn = document.getElementById("notifToggleBtn");
+    if(!btn) return;
+    btn.textContent = notifEnabled() ? I18N[lang].notifDisable : I18N[lang].notifEnable;
+  }
+  function initNotifUI(){
+    const modal = document.getElementById("notifModal");
+    document.getElementById("notifBtn").addEventListener("click", ()=>{
+      updateNotifToggleLabel();
+      modal.classList.add("show");
+    });
+    document.getElementById("notifModalClose").addEventListener("click", ()=> modal.classList.remove("show"));
+    modal.addEventListener("click", e=>{ if(e.target === modal) modal.classList.remove("show"); });
+    document.getElementById("notifToggleBtn").addEventListener("click", async ()=>{
+      if(notifEnabled()){
+        try{ localStorage.setItem(NOTIF_ENABLED_KEY, "0"); }catch(e){}
+        toast(I18N[lang].notifDisabledToast);
+        updateNotifToggleLabel();
+        return;
+      }
+      if(typeof Notification === "undefined"){ toast(I18N[lang].notifDeniedToast); return; }
+      let perm = Notification.permission;
+      if(perm === "default") perm = await Notification.requestPermission();
+      if(perm !== "granted"){ toast(I18N[lang].notifDeniedToast); return; }
+      try{ localStorage.setItem(NOTIF_ENABLED_KEY, "1"); }catch(e){}
+      toast(I18N[lang].notifEnabledToast);
+      updateNotifToggleLabel();
+      maybeFireNativeNotification();
+    });
+  }
+  function startReminderLoop(){
+    renderShiftReminder();
+    maybeFireNativeNotification();
+    setInterval(()=>{ renderShiftReminder(); maybeFireNativeNotification(); }, 60000);
+  }
+
   /* ---- people modal: a list view and an edit view, swapped inside #peopleBody ---- */
   function initProfileUI(){
     const $ = id => document.getElementById(id);
@@ -1743,7 +1908,7 @@
         if(activePersonId === id) activePersonId = Object.keys(state.people)[0];
         state.settings.activePersonId = activePersonId;
         saveStore();
-        renderProfile(); renderDayNav(); renderEntries(); renderBackupNudge();
+        renderProfile(); renderDayNav(); renderEntries(); renderBackupNudge(); renderShiftReminder();
         autoSyncPush();
         toast(I18N[lang].personDeletedToast);
         render();
@@ -1758,7 +1923,7 @@
         if(activePersonId === id) activePersonId = Object.keys(state.people)[0];
         state.settings.activePersonId = activePersonId;
         saveStore();
-        renderProfile(); renderDayNav(); renderEntries(); renderBackupNudge();
+        renderProfile(); renderDayNav(); renderEntries(); renderBackupNudge(); renderShiftReminder();
         autoSyncPush();
         toast(I18N[lang].personDeletedToast);
         mode = "list"; render();
@@ -1791,7 +1956,7 @@
         else if(!activePersonId || !state.people[activePersonId]) activePersonId = id;
         state.settings.activePersonId = activePersonId;
         saveStore();
-        renderProfile(); renderDayNav(); renderEntries(); renderBackupNudge();
+        renderProfile(); renderDayNav(); renderEntries(); renderBackupNudge(); renderShiftReminder();
         autoSyncPush();
         toast(I18N[lang].profSavedToast);
         mode = "list"; render();
@@ -2335,7 +2500,7 @@
     renderTrend();
     renderMonthBreakdown();
     renderShiftCompare();
-    renderBackupNudge();
+    renderBackupNudge(); renderShiftReminder();
     renderPatientMonthTotal();
     if(insightsCollapse) insightsCollapse.refreshHeight();
   }
@@ -2884,7 +3049,10 @@
     initPinUI();
     initProfileUI();
     initBackupNudgeUI();
-    renderBackupNudge();
+    initShiftReminderUI();
+    initNotifUI();
+    startReminderLoop();
+    renderBackupNudge(); renderShiftReminder();
     showLockOverlayIfNeeded();
   }
   init();
