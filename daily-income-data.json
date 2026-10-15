@@ -1,7 +1,7 @@
 {
   "app": "daily-income",
   "version": 2,
-  "updatedAt": "2026-10-14T18:42:57.817Z",
+  "updatedAt": "2026-10-15T06:39:30.115Z",
   "entries": {
     "2026-09-02": [
       {
@@ -970,6 +970,16 @@
         "note": "",
         "person": "_legacy",
         "ts": 1791912228499
+      },
+      {
+        "id": "1792046367477_foj0n",
+        "time": "09:39",
+        "amount": 300,
+        "method": "card",
+        "shift": "evening",
+        "note": "",
+        "person": "p_1790953677632_he1e",
+        "ts": 1792046367477
       }
     ],
     "2026-10-14": [
