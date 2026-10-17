@@ -1,7 +1,7 @@
 {
   "app": "daily-income",
   "version": 2,
-  "updatedAt": "2026-10-17T17:26:14.907Z",
+  "updatedAt": "2026-10-17T17:26:17.719Z",
   "entries": {
     "2026-09-02": [
       {
@@ -1066,6 +1066,16 @@
         "note": "",
         "person": "p_1790953677632_he1e",
         "ts": 1792257972748
+      },
+      {
+        "id": "1792257975595_spxdo",
+        "time": "20:26",
+        "amount": 60,
+        "method": "card",
+        "shift": "evening",
+        "note": "",
+        "person": "p_1790953677632_he1e",
+        "ts": 1792257975595
       }
     ]
   },
