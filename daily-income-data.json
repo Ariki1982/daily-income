@@ -1,7 +1,7 @@
 {
   "app": "daily-income",
   "version": 2,
-  "updatedAt": "2026-10-19T14:04:50.010Z",
+  "updatedAt": "2026-10-19T14:05:39.878Z",
   "entries": {
     "2026-09-02": [
       {
@@ -1140,6 +1140,16 @@
         "note": "",
         "person": "_legacy",
         "ts": 1792418687893
+      },
+      {
+        "id": "1792418737093_bvifi",
+        "time": "17:05",
+        "amount": 550,
+        "method": "card",
+        "shift": "morning",
+        "note": "",
+        "person": "_legacy",
+        "ts": 1792418737093
       }
     ]
   },
