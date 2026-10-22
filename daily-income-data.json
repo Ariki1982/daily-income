@@ -1,7 +1,7 @@
 {
   "app": "daily-income",
   "version": 2,
-  "updatedAt": "2026-10-22T19:41:21.782Z",
+  "updatedAt": "2026-10-22T19:41:27.126Z",
   "entries": {
     "2026-09-02": [
       {
@@ -1389,8 +1389,8 @@
       "_legacy": {
         "new": 1,
         "followup": 0,
-        "services": 0,
-        "ts": 1792698078234
+        "services": 1,
+        "ts": 1792698082085
       }
     }
   },
