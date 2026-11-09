@@ -1,7 +1,7 @@
 {
   "app": "daily-income",
   "version": 2,
-  "updatedAt": "2026-11-09T17:18:02.102Z",
+  "updatedAt": "2026-11-09T17:18:07.185Z",
   "entries": {
     "2026-09-02": [
       {
@@ -1559,6 +1559,18 @@
         "person": "_legacy",
         "ts": 1794234027907
       }
+    ],
+    "2026-11-09": [
+      {
+        "id": "1794244685102_o7f8l",
+        "time": "20:18",
+        "amount": 520,
+        "method": "card",
+        "shift": "evening",
+        "note": "",
+        "person": "_legacy",
+        "ts": 1794244685102
+      }
     ]
   },
   "deleted": {
@@ -1861,10 +1873,10 @@
     },
     "2026-11-09": {
       "_legacy": {
-        "new": 1,
+        "new": 4,
         "followup": 0,
         "services": 4,
-        "ts": 1794244682008
+        "ts": 1794244683887
       }
     }
   },
