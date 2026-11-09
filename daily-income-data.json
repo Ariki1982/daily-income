@@ -1,7 +1,7 @@
 {
   "app": "daily-income",
   "version": 2,
-  "updatedAt": "2026-11-09T14:13:01.753Z",
+  "updatedAt": "2026-11-09T14:13:37.590Z",
   "entries": {
     "2026-09-02": [
       {
@@ -1496,12 +1496,12 @@
       {
         "id": "1794233580726_gd24g",
         "time": "17:13",
-        "amount": 290,
+        "amount": 310,
         "method": "cash",
         "shift": "morning",
         "note": "",
         "person": "_legacy",
-        "ts": 1794233580726
+        "ts": 1794233615470
       }
     ]
   },
