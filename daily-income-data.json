@@ -1,7 +1,7 @@
 {
   "app": "daily-income",
   "version": 2,
-  "updatedAt": "2026-11-09T14:20:12.031Z",
+  "updatedAt": "2026-11-09T14:20:30.401Z",
   "entries": {
     "2026-09-02": [
       {
@@ -1548,6 +1548,16 @@
         "note": "على حساب الشيخ خالد مسفر اليمني",
         "person": "_legacy",
         "ts": 1794234009370
+      },
+      {
+        "id": "1794234027907_jaz0s",
+        "time": "17:20",
+        "amount": 300,
+        "method": "cash",
+        "shift": "evening",
+        "note": "",
+        "person": "_legacy",
+        "ts": 1794234027907
       }
     ]
   },
